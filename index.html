@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Interactive 3D GPU Particle Christmas Tree · 16,000+ WebGL Stardust & Nebula Physics" />
+  <meta name="description" content="Interactive 3D GPU Particle Christmas Tree · Animated Draw-In, Background Fireworks & Nebula Physics" />
   <title>Merry Christmas · 3D Particle Tree</title>
   <style>
     :root {
       --accent: #ffd88a;
-      --bg-css: radial-gradient(circle at 50% 45%, #160e0a 0%, #09070f 48%, #020308 100%);
+      --bg-css: radial-gradient(circle at 50% 45%, #1d1109 0%, #0b0710 52%, #020308 100%);
       --panel-bg: rgba(10, 14, 24, 0.58);
       --panel-border: rgba(255, 255, 255, 0.15);
       --text-main: rgba(255, 255, 255, 0.94);
@@ -40,19 +40,9 @@
       display: block;
     }
 
-    canvas#glScene {
-      z-index: 1;
-    }
-
-    canvas#overlayScene {
-      z-index: 2;
-      cursor: grab;
-      touch-action: none;
-    }
-
-    canvas#overlayScene:active {
-      cursor: grabbing;
-    }
+    canvas#glScene { z-index: 1; }
+    canvas#overlayScene { z-index: 2; cursor: grab; touch-action: none; }
+    canvas#overlayScene:active { cursor: grabbing; }
 
     .greeting-overlay {
       position: fixed;
@@ -63,7 +53,14 @@
       text-align: center;
       padding: 0 28px;
       z-index: 5;
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 1.3s ease, transform 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .greeting-overlay.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .greeting-eyebrow {
@@ -113,8 +110,7 @@
     .top-hint {
       position: fixed;
       top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 16px;
       padding: 6px 14px;
       border-radius: 999px;
       background: rgba(10, 14, 24, 0.48);
@@ -128,6 +124,10 @@
       z-index: 10;
       white-space: nowrap;
       transition: opacity 0.4s ease;
+    }
+
+    @media (max-width: 1120px) {
+      .top-hint { display: none; }
     }
 
     .showcase-dock {
@@ -499,7 +499,9 @@
 
   <div class="controls-wrap">
     <div class="toolbar-btns">
+      <button class="pill-btn hide-in-zen" id="btnReplay" title="Replay Opening Animation">🎬 Replay</button>
       <button class="pill-btn hide-in-zen" id="btnScatter" title="Scatter / Gather Particles">✨ Scatter</button>
+      <button class="pill-btn hide-in-zen active" id="btnFireworks" title="Toggle Background Fireworks">🎆 Fireworks</button>
       <button class="pill-btn hide-in-zen" id="btnPhotos" title="Hang Polaroid Photos on Tree">📷 Photos</button>
       <button class="pill-btn hide-in-zen" id="btnMusic" title="Play Christmas Music Box">🎵 Music</button>
       <button class="pill-btn hide-in-zen" id="btnGesture" title="Hand Gesture Control">🖐️ Gesture</button>
@@ -609,6 +611,7 @@
           ribbonColors: ['#ffffff', '#fff0c2', '#ffd36b'],
           ornamentColors: ['#fff5d6', '#ffd166', '#ff824a', '#ffffff'],
           ringColors: ['#ffe4a3', '#ffb95c', '#ffd68a'],
+          fwColors: ['#ffd878', '#ff9b54', '#fff0c2', '#ff6e7f'],
           topperColor: '#ffd470',
           accent: '#ffd88a'
         },
@@ -621,6 +624,7 @@
           ribbonColors: ['#ffffff', '#ffd6ed', '#ff8ace'],
           ornamentColors: ['#fff0f6', '#ff9cd2', '#ffe0a3', '#d08eff'],
           ringColors: ['#ffb8de', '#d88cff', '#ff94c8'],
+          fwColors: ['#ff8ace', '#ffe0a3', '#d08eff', '#ffffff'],
           topperColor: '#ff82c8',
           accent: '#ff94c8'
         },
@@ -633,6 +637,7 @@
           ribbonColors: ['#ffffff', '#c0f5ff', '#5ad6ff'],
           ornamentColors: ['#ffe694', '#6ee5ff', '#ffffff', '#7aa2ff'],
           ringColors: ['#a6eeff', '#4dc0ff', '#7ce8ff'],
+          fwColors: ['#6ee5ff', '#ffe694', '#9eb8ff', '#ffffff'],
           topperColor: '#7ae8ff',
           accent: '#7ce8ff'
         },
@@ -645,6 +650,7 @@
           ribbonColors: ['#ffffff', '#b8ffe2', '#64f2ff'],
           ornamentColors: ['#ffe58f', '#ff7aa8', '#6effc8', '#ffffff'],
           ringColors: ['#7effce', '#5cc5ff', '#9effd3'],
+          fwColors: ['#6effc8', '#64f2ff', '#ffe58f', '#ff8cc8'],
           topperColor: '#ff8cc8',
           accent: '#6effb8'
         }
@@ -695,6 +701,9 @@
         lastY: 0,
         scatter: 0,
         targetScatter: 0,
+        introProgress: 0,     // 0 -> 1.38 over ~4.2s opening draw-in animation
+        introDone: false,
+        fireworksEnabled: true,
         time: 0,
         gestureActive: false,
         handRotBias: 0,
@@ -736,9 +745,10 @@
         attribute vec3 aScatterPos;
         attribute vec3 aColor;
         attribute vec4 aParams; // x: size, y: alpha, z: phase, w: twinkleSpeed
-        attribute vec4 aMeta;   // x: type (0=tree,1=ring,2=topper,3=snow,4=ember,5=bgStar), y: speed, z: shape (0=soft,1=diamond,2=orb), w: extra
+        attribute vec4 aMeta;   // x: type (0=tree,1=ring,2=topper,3=snow,4=ember,5=bgStar,6=firework), y: speed, z: shape, w: buildOrder
 
         uniform float uTime;
+        uniform float uIntro;
         uniform float uScatter;
         uniform float uRotY;
         uniform float uRotX;
@@ -758,8 +768,8 @@
           vShape = aMeta.z;
           vColor = aColor;
 
-          // Background stars (screen-space NDC)
-          if (pType > 4.5) {
+          // 5: Background stars (screen-space NDC)
+          if (pType > 4.5 && pType < 5.5) {
             float tw = 0.45 + 0.55 * sin(uTime * aParams.w + aParams.z);
             gl_Position = vec4(aTreePos.x * 2.0 - 1.0, 1.0 - aTreePos.y * 2.0, 0.99, 1.0);
             gl_PointSize = aParams.x * uDpr;
@@ -767,39 +777,50 @@
             return;
           }
 
+          // Opening staggered arrival (0 = suspended nebula, 1 = assembled)
+          float localP = clamp((uIntro - aMeta.w) / 0.30, 0.0, 1.0);
+          float arrive = 1.0 - pow(1.0 - localP, 3.0);
+          float lockFlash = exp(-pow((localP - 0.88) * 6.0, 2.0)) * 0.55;
+
           vec3 pos = aTreePos;
           float angleY = uRotY;
+          float effScatter = max(uScatter, 1.0 - arrive);
 
           if (pType < 0.5) {
-            // Tree particle + nebula vortex scatter
-            float sc = uScatter;
-            pos = mix(aTreePos, aScatterPos, sc);
-            if (sc > 0.002) {
-              float sw = sc * 2.2 * (1.0 - length(aTreePos.xz) * 0.0012);
+            // 0: Tree particle + spiral opening / nebula vortex
+            pos = mix(aTreePos, aScatterPos, effScatter);
+            if (effScatter > 0.002) {
+              float sw = effScatter * 2.35 * (1.0 - length(aTreePos.xz) * 0.0012);
               float cs = cos(sw), sn = sin(sw);
               pos.xz = vec2(pos.x * cs - pos.z * sn, pos.x * sn + pos.z * cs);
             }
           } else if (pType < 1.5) {
-            // Galaxy ring differential rotation
+            // 1: Galaxy rings differential rotation
             float ang = uTime * aMeta.y;
             float cs = cos(ang), sn = sin(ang);
-            pos.xz = vec2(pos.x * cs - pos.z * sn, pos.x * sn + pos.z * cs);
-            pos.xz *= (1.0 + uScatter * 0.55);
-            pos.y += sin(uTime * 1.8 + aParams.z) * 2.5;
+            vec3 ringPos = aTreePos;
+            ringPos.xz = vec2(ringPos.x * cs - ringPos.z * sn, ringPos.x * sn + ringPos.z * cs);
+            ringPos.xz *= (1.0 + effScatter * 0.55);
+            ringPos.y += sin(uTime * 1.8 + aParams.z) * 2.5;
+            pos = mix(ringPos, aScatterPos, (1.0 - arrive) * 0.75);
           } else if (pType < 2.5) {
-            // Tree topper (gently faces viewer when assembled)
-            pos = mix(aTreePos, aScatterPos, uScatter);
-            angleY = mix(uTopRotY, uRotY, uScatter);
+            // 2: Tree topper
+            pos = mix(aTreePos, aScatterPos, effScatter);
+            angleY = mix(uTopRotY, uRotY, effScatter);
           } else if (pType < 3.5) {
-            // Falling 3D snow
+            // 3: Falling 3D snow
             float span = 760.0;
             pos.y = mod(aTreePos.y + uTime * aMeta.y + 430.0, span) - 430.0;
             pos.x += sin(uTime * 1.1 + aParams.z) * 16.0;
-          } else {
-            // Rising embers
+          } else if (pType < 4.5) {
+            // 4: Rising embers
             float span = 510.0;
             pos.y = 240.0 - mod(240.0 - aTreePos.y + uTime * aMeta.y, span);
             pos.x += sin(uTime * 1.5 + aParams.z) * 12.0;
+          } else {
+            // 6: Background 3D Fireworks (minimal rotation parallax so they stay in background sky)
+            angleY = uRotY * 0.08;
+            lockFlash = 0.0;
           }
 
           // 3D Camera Rotation
@@ -828,20 +849,20 @@
             1.0 - (syScreen / uResolution.y) * 2.0
           );
 
-          gl_Position = vec4(ndc, clamp((zCam - 40.0) / 2000.0, 0.0, 0.98), 1.0);
+          gl_Position = vec4(ndc, clamp((zCam - 40.0) / 2500.0, 0.0, 0.98), 1.0);
 
-          float twinkle = 0.62 + 0.38 * sin(uTime * aParams.w + aParams.z);
-          float depthAtten = clamp((uCamDist + 160.0 - zCam) / 310.0, 0.36, 1.22);
+          float twinkle = (pType > 5.5) ? 1.0 : (0.62 + 0.38 * sin(uTime * aParams.w + aParams.z));
+          float depthAtten = (pType > 5.5) ? 1.0 : clamp((uCamDist + 160.0 - zCam) / 310.0, 0.36, 1.22);
           if (pType > 0.5 && pType < 1.5) {
             depthAtten *= (1.0 - uScatter * 0.62);
           }
 
-          float ptSize = aParams.x * scale * uDpr;
+          float ptSize = aParams.x * scale * uDpr * (1.0 + lockFlash * 0.45);
           if (aMeta.z > 0.5 && aMeta.z < 1.5) {
             ptSize *= (0.7 + 0.6 * max(0.0, sin(uTime * aParams.w + aParams.z)));
           }
           gl_PointSize = clamp(ptSize, 1.0, 96.0);
-          vAlpha = clamp(aParams.y * twinkle * depthAtten, 0.0, 1.0);
+          vAlpha = clamp((aParams.y + lockFlash * 0.35) * twinkle * depthAtten, 0.0, 1.0);
         }
       `;
 
@@ -860,13 +881,11 @@
           vec3 col = vColor;
 
           if (vShape < 0.5) {
-            // Crisp pinpoint star + rich colored bloom halo
             float core = exp(-d2 * 56.0);
             float halo = exp(-d2 * 9.5) * 0.68;
             intensity = core + halo;
             col = mix(vColor * 1.18, vec3(1.0), core * 0.72);
           } else if (vShape < 1.5) {
-            // 4-point anamorphic crystal diamond flare
             float d = length(uv);
             float rayH = exp(-abs(uv.y) * 34.0) * exp(-abs(uv.x) * 6.5);
             float rayV = exp(-abs(uv.x) * 34.0) * exp(-abs(uv.y) * 6.5);
@@ -874,7 +893,6 @@
             intensity = core * 0.95 + (rayH + rayV) * 0.78;
             col = mix(vColor * 1.15, vec3(1.0), clamp(core + (rayH + rayV) * 0.48, 0.0, 1.0));
           } else {
-            // Soft luminous fairy-light orb
             float core = exp(-d2 * 32.0);
             float halo = exp(-d2 * 8.2) * 0.76;
             intensity = core * 0.9 + halo;
@@ -890,9 +908,7 @@
         const s = gl.createShader(type);
         gl.shaderSource(s, src);
         gl.compileShader(s);
-        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-          console.error(gl.getShaderInfoLog(s));
-        }
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
         return s;
       }
 
@@ -909,6 +925,7 @@
         aParams: gl.getAttribLocation(program, 'aParams'),
         aMeta: gl.getAttribLocation(program, 'aMeta'),
         uTime: gl.getUniformLocation(program, 'uTime'),
+        uIntro: gl.getUniformLocation(program, 'uIntro'),
         uScatter: gl.getUniformLocation(program, 'uScatter'),
         uRotY: gl.getUniformLocation(program, 'uRotY'),
         uRotX: gl.getUniformLocation(program, 'uRotX'),
@@ -920,204 +937,13 @@
         uDpr: gl.getUniformLocation(program, 'uDpr')
       };
 
-      const vbo = gl.createBuffer();
-      const STRIDE_FLOATS = 17; // 3 + 3 + 3 + 4 + 4
+      const staticVbo = gl.createBuffer();
+      const fwVbo = gl.createBuffer();
+      const STRIDE_FLOATS = 17;
       let particleCount = 0;
 
-      const TREE_HEIGHT = 432;
-      const TREE_BASE_Y = 200;
-      const TREE_TOP_Y = TREE_BASE_Y - TREE_HEIGHT; // -232
-      const TREE_RADIUS = 168;
-
-      function buildGPUData() {
-        const theme = THEMES[currentThemeKey];
-        const rows = [];
-
-        function pushPt(tx, ty, tz, sx, sy, sz, hex, size, alpha, phase, speed, pType, metaSpeed, shapeFlag) {
-          const [r, g, b] = hexToRgb01(hex);
-          rows.push(
-            tx, ty, tz,
-            sx, sy, sz,
-            r, g, b,
-            size, alpha, phase, speed,
-            pType, metaSpeed, shapeFlag, 0
-          );
-        }
-
-        // 1. Deep-space background stars (420)
-        for (let i = 0; i < 420; i++) {
-          pushPt(
-            Math.random(), Math.random(), 0,
-            0, 0, 0,
-            '#ffffff', rand(1.2, 3.2), rand(0.25, 0.85), rand(0, 6.28), rand(0.8, 2.5),
-            5, 0, 0
-          );
-        }
-
-        // 2. Outer Velvet Silhouette Cone (5,200 crisp pinpoint stardust)
-        for (let i = 0; i < 5200; i++) {
-          const hNorm = Math.pow(Math.random(), 0.76);
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const wave = 1 + 0.08 * Math.sin(hNorm * Math.PI * 10);
-          const maxR = hNorm * TREE_RADIUS * wave;
-          const radialBias = 0.62 + 0.38 * Math.pow(Math.random(), 0.45);
-          const r = maxR * radialBias;
-          const ang = Math.random() * Math.PI * 2;
-          const [sx, sy, sz] = randomSpherePoint(180, 510);
-          pushPt(
-            Math.cos(ang) * r, y, Math.sin(ang) * r,
-            sx, sy, sz,
-            pick(theme.treeColors), rand(4.5, 11.5), rand(0.45, 0.92), rand(0, 6.28), rand(1.6, 4.4),
-            0, 0, 0
-          );
-        }
-
-        // 3. Soft Volumetric Inner Mist (2,400 particles)
-        for (let i = 0; i < 2400; i++) {
-          const hNorm = Math.pow(Math.random(), 0.75);
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * rand(0.05, 0.72);
-          const ang = Math.random() * Math.PI * 2;
-          const [sx, sy, sz] = randomSpherePoint(150, 440);
-          pushPt(
-            Math.cos(ang) * r, y, Math.sin(ang) * r,
-            sx, sy, sz,
-            pick(theme.treeColors), rand(6.5, 14.0), rand(0.16, 0.38), rand(0, 6.28), rand(1.2, 3.0),
-            0, 0, 2
-          );
-        }
-
-        // 4. Sweeping Double-Helix Diamond Light Garlands (2,800 particles)
-        const turns = 6.5;
-        for (let i = 0; i < 2800; i++) {
-          const strand = i % 2;
-          const t = i / 2800;
-          const jt = Math.min(1, Math.max(0, t + rand(-0.011, 0.011)));
-          const y = TREE_TOP_Y + jt * TREE_HEIGHT;
-          const r = jt * TREE_RADIUS * 1.04 + rand(-4.5, 5.5);
-          const ang = jt * turns * Math.PI * 2 + strand * Math.PI + rand(-0.12, 0.12);
-          const [sx, sy, sz] = randomSpherePoint(200, 530);
-          pushPt(
-            Math.cos(ang) * r, y, Math.sin(ang) * r,
-            sx, sy, sz,
-            pick(theme.ribbonColors), rand(6.5, 14.5), rand(0.65, 1.0), rand(0, 6.28), rand(2.2, 5.0),
-            0, 0, 0
-          );
-        }
-
-        // 5. Luminous Fairy-Light Orbs (75) + Crisp 4-Point Sparkle Diamonds (55)
-        for (let i = 0; i < 75; i++) {
-          const hNorm = 0.12 + (i / 75) * 0.85;
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT + rand(-4, 4);
-          const r = hNorm * TREE_RADIUS * rand(0.92, 1.05);
-          const ang = i * 2.39996 + rand(-0.15, 0.15);
-          const [sx, sy, sz] = randomSpherePoint(170, 460);
-          pushPt(
-            Math.cos(ang) * r, y, Math.sin(ang) * r,
-            sx, sy, sz,
-            theme.ornamentColors[i % theme.ornamentColors.length], rand(18, 28), rand(0.75, 0.98), rand(0, 6.28), rand(1.4, 3.0),
-            0, 0, 2
-          );
-        }
-        for (let i = 0; i < 55; i++) {
-          const hNorm = 0.1 + (i / 55) * 0.87;
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * rand(0.95, 1.06);
-          const ang = i * 2.39996 + 1.1;
-          const [sx, sy, sz] = randomSpherePoint(180, 480);
-          pushPt(
-            Math.cos(ang) * r, y, Math.sin(ang) * r,
-            sx, sy, sz,
-            '#ffffff', rand(20, 34), rand(0.7, 1.0), rand(0, 6.28), rand(1.8, 3.8),
-            0, 0, 1
-          );
-        }
-
-        // 6. Tree Topper (Star or Heart, 520 razor-sharp particles + central lens star)
-        if (topperMode === 'star') {
-          for (let i = 0; i < 520; i++) {
-            const outerR = 30, innerR = 12.5;
-            const edge = Math.floor(Math.random() * 10);
-            const t = Math.random();
-            const a1 = (edge * Math.PI) / 5 - Math.PI / 2;
-            const a2 = ((edge + 1) * Math.PI) / 5 - Math.PI / 2;
-            const r1 = edge % 2 === 0 ? outerR : innerR;
-            const r2 = (edge + 1) % 2 === 0 ? outerR : innerR;
-            const fill = i < 160 ? rand(0.15, 0.88) : rand(0.96, 1.03);
-            const px = (Math.cos(a1) * r1 * (1 - t) + Math.cos(a2) * r2 * t) * fill;
-            const py = (Math.sin(a1) * r1 * (1 - t) + Math.sin(a2) * r2 * t) * fill;
-            const [sx, sy, sz] = randomSpherePoint(120, 340);
-            pushPt(
-              px, TREE_TOP_Y - 22 + py, rand(-4, 4),
-              sx, sy - 160, sz,
-              theme.topperColor, rand(6.5, 12.5), rand(0.75, 1.0), rand(0, 6.28), rand(2.5, 4.5),
-              2, 0, 0
-            );
-          }
-          // Central anamorphic star flare
-          pushPt(0, TREE_TOP_Y - 22, 0, 0, -160, 0, theme.topperColor, 68, 0.92, 0, 2.4, 2, 0, 1);
-        } else {
-          for (let i = 0; i < 520; i++) {
-            const t = Math.random() * Math.PI * 2;
-            const fill = i < 110 ? rand(0.25, 0.74) : rand(0.95, 1.03);
-            const hx = 16 * Math.pow(Math.sin(t), 3);
-            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-            const scale = 1.78 * fill;
-            const [sx, sy, sz] = randomSpherePoint(120, 340);
-            pushPt(
-              hx * scale, TREE_TOP_Y - 27 + hy * scale, rand(-4, 4),
-              sx, sy - 160, sz,
-              theme.topperColor, i < 110 ? rand(5.5, 9.5) : rand(7.0, 12.5), i < 110 ? 0.52 : 0.95, rand(0, 6.28), rand(2.5, 4.5),
-              2, 0, 0
-            );
-          }
-          pushPt(0, TREE_TOP_Y - 24, 0, 0, -160, 0, theme.topperColor, 54, 0.42, 0, 2.0, 2, 0, 2);
-        }
-
-        // 7. Milky Way Spiral Galaxy Base (4,800 fine GPU stars)
-        const rings = [
-          { rMin: 180, rMax: 242, count: 1800, speed: 0.24 },
-          { rMin: 254, rMax: 326, count: 1600, speed: -0.17 },
-          { rMin: 338, rMax: 435, count: 1400, speed: 0.11 }
-        ];
-        rings.forEach((ring, rIdx) => {
-          for (let i = 0; i < ring.count; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const radius = rand(ring.rMin, ring.rMax) + Math.sin(ang * 2 + rIdx) * 10;
-            const yOffset = rand(-4, 5) + Math.sin(ang * 3 + rIdx) * 2.5;
-            pushPt(
-              Math.cos(ang) * radius, TREE_BASE_Y + 18 + yOffset, Math.sin(ang) * radius,
-              0, 0, 0,
-              pick(theme.ringColors), rand(4.5, 10.5), rand(0.32, 0.92), rand(0, 6.28), rand(1.6, 3.6),
-              1, ring.speed, 0
-            );
-          }
-        });
-
-        // 8. Falling 3D Snow (450) + Rising Stardust Embers (140)
-        for (let i = 0; i < 450; i++) {
-          pushPt(
-            rand(-560, 560), rand(-430, 330), rand(-450, 450),
-            0, 0, 0,
-            '#e0f2ff', rand(5.0, 11.5), rand(0.28, 0.78), rand(0, 6.28), rand(1.0, 2.2),
-            3, rand(20, 52), 2
-          );
-        }
-        for (let i = 0; i < 140; i++) {
-          const r = rand(35, 255), ang = Math.random() * Math.PI * 2;
-          pushPt(
-            Math.cos(ang) * r, rand(-230, 240), Math.sin(ang) * r,
-            0, 0, 0,
-            theme.accent, rand(6.0, 13.0), rand(0.32, 0.85), rand(0, 6.28), rand(2.0, 4.0),
-            4, rand(18, 46), 0
-          );
-        }
-
-        particleCount = rows.length / STRIDE_FLOATS;
-        const buf = new Float32Array(rows);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
-
+      function bindBufferAttribs(buf) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
         const bpe = 4;
         const stride = STRIDE_FLOATS * bpe;
         gl.enableVertexAttribArray(loc.aTreePos);
@@ -1132,7 +958,319 @@
         gl.vertexAttribPointer(loc.aMeta, 4, gl.FLOAT, false, stride, 13 * bpe);
       }
 
-      // ==================== 2D Overlay (Photos & Click Bursts only) ====================
+      const TREE_HEIGHT = 432;
+      const TREE_BASE_Y = 200;
+      const TREE_TOP_Y = TREE_BASE_Y - TREE_HEIGHT; // -232
+      const TREE_RADIUS = 168;
+
+      function buildGPUData() {
+        const theme = THEMES[currentThemeKey];
+        const rows = [];
+
+        function pushPt(tx, ty, tz, sx, sy, sz, hex, size, alpha, phase, speed, pType, metaSpeed, shapeFlag, buildOrder) {
+          const [r, g, b] = hexToRgb01(hex);
+          rows.push(
+            tx, ty, tz,
+            sx, sy, sz,
+            r, g, b,
+            size, alpha, phase, speed,
+            pType, metaSpeed, shapeFlag, buildOrder
+          );
+        }
+
+        // 1. Background stars (420)
+        for (let i = 0; i < 420; i++) {
+          pushPt(Math.random(), Math.random(), 0, 0, 0, 0, '#ffffff', rand(1.2, 3.2), rand(0.25, 0.85), rand(0, 6.28), rand(0.8, 2.5), 5, 0, 0, 0);
+        }
+
+        // 2. Outer Velvet Silhouette Cone (5,200 crisp pinpoint stardust) - draws bottom -> top
+        for (let i = 0; i < 5200; i++) {
+          const hNorm = Math.pow(Math.random(), 0.76);
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const wave = 1 + 0.08 * Math.sin(hNorm * Math.PI * 10);
+          const maxR = hNorm * TREE_RADIUS * wave;
+          const radialBias = 0.62 + 0.38 * Math.pow(Math.random(), 0.45);
+          const r = maxR * radialBias;
+          const ang = Math.random() * Math.PI * 2;
+          const [sx, sy, sz] = randomSpherePoint(200, 560);
+          const order = 0.14 + (1.0 - hNorm) * 0.72 + rand(-0.04, 0.04);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            pick(theme.treeColors), rand(4.5, 11.5), rand(0.45, 0.92), rand(0, 6.28), rand(1.6, 4.4),
+            0, 0, 0, order
+          );
+        }
+
+        // 3. Soft Volumetric Inner Mist (2,400)
+        for (let i = 0; i < 2400; i++) {
+          const hNorm = Math.pow(Math.random(), 0.75);
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const r = hNorm * TREE_RADIUS * rand(0.05, 0.72);
+          const ang = Math.random() * Math.PI * 2;
+          const [sx, sy, sz] = randomSpherePoint(160, 480);
+          const order = 0.14 + (1.0 - hNorm) * 0.72 + rand(-0.04, 0.04);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            pick(theme.treeColors), rand(6.5, 14.0), rand(0.16, 0.38), rand(0, 6.28), rand(1.2, 3.0),
+            0, 0, 2, order
+          );
+        }
+
+        // 4. Sweeping Double-Helix Diamond Light Garlands (2,800) - spirals up bottom -> top!
+        const turns = 6.5;
+        for (let i = 0; i < 2800; i++) {
+          const strand = i % 2;
+          const t = i / 2800;
+          const jt = Math.min(1, Math.max(0, t + rand(-0.011, 0.011)));
+          const y = TREE_TOP_Y + jt * TREE_HEIGHT;
+          const r = jt * TREE_RADIUS * 1.04 + rand(-4.5, 5.5);
+          const ang = jt * turns * Math.PI * 2 + strand * Math.PI + rand(-0.12, 0.12);
+          const [sx, sy, sz] = randomSpherePoint(220, 560);
+          const order = 0.16 + (1.0 - jt) * 0.72;
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            pick(theme.ribbonColors), rand(6.5, 14.5), rand(0.65, 1.0), rand(0, 6.28), rand(2.2, 5.0),
+            0, 0, 0, order
+          );
+        }
+
+        // 5. Luminous Fairy-Light Orbs (75) + 4-Point Sparkle Diamonds (55)
+        for (let i = 0; i < 75; i++) {
+          const hNorm = 0.12 + (i / 75) * 0.85;
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT + rand(-4, 4);
+          const r = hNorm * TREE_RADIUS * rand(0.92, 1.05);
+          const ang = i * 2.39996 + rand(-0.15, 0.15);
+          const [sx, sy, sz] = randomSpherePoint(180, 490);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            theme.ornamentColors[i % theme.ornamentColors.length], rand(18, 28), rand(0.75, 0.98), rand(0, 6.28), rand(1.4, 3.0),
+            0, 0, 2, 0.16 + (1.0 - hNorm) * 0.72
+          );
+        }
+        for (let i = 0; i < 55; i++) {
+          const hNorm = 0.1 + (i / 55) * 0.87;
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const r = hNorm * TREE_RADIUS * rand(0.95, 1.06);
+          const ang = i * 2.39996 + 1.1;
+          const [sx, sy, sz] = randomSpherePoint(180, 490);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            '#ffffff', rand(20, 34), rand(0.7, 1.0), rand(0, 6.28), rand(1.8, 3.8),
+            0, 0, 1, 0.16 + (1.0 - hNorm) * 0.72
+          );
+        }
+
+        // 6. Tree Topper (converges right as the spiral reaches the apex!)
+        if (topperMode === 'star') {
+          for (let i = 0; i < 520; i++) {
+            const outerR = 30, innerR = 12.5;
+            const edge = Math.floor(Math.random() * 10);
+            const t = Math.random();
+            const a1 = (edge * Math.PI) / 5 - Math.PI / 2;
+            const a2 = ((edge + 1) * Math.PI) / 5 - Math.PI / 2;
+            const r1 = edge % 2 === 0 ? outerR : innerR;
+            const r2 = (edge + 1) % 2 === 0 ? outerR : innerR;
+            const fill = i < 160 ? rand(0.15, 0.88) : rand(0.96, 1.03);
+            const px = (Math.cos(a1) * r1 * (1 - t) + Math.cos(a2) * r2 * t) * fill;
+            const py = (Math.sin(a1) * r1 * (1 - t) + Math.sin(a2) * r2 * t) * fill;
+            const [sx, sy, sz] = randomSpherePoint(140, 360);
+            pushPt(
+              px, TREE_TOP_Y - 22 + py, rand(-4, 4),
+              sx, sy - 160, sz,
+              theme.topperColor, rand(6.5, 12.5), rand(0.75, 1.0), rand(0, 6.28), rand(2.5, 4.5),
+              2, 0, 0, rand(0.86, 0.98)
+            );
+          }
+          pushPt(0, TREE_TOP_Y - 22, 0, 0, -160, 0, theme.topperColor, 68, 0.92, 0, 2.4, 2, 0, 1, 0.96);
+        } else {
+          for (let i = 0; i < 520; i++) {
+            const t = Math.random() * Math.PI * 2;
+            const fill = i < 110 ? rand(0.25, 0.74) : rand(0.95, 1.03);
+            const hx = 16 * Math.pow(Math.sin(t), 3);
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            const scale = 1.78 * fill;
+            const [sx, sy, sz] = randomSpherePoint(140, 360);
+            pushPt(
+              hx * scale, TREE_TOP_Y - 27 + hy * scale, rand(-4, 4),
+              sx, sy - 160, sz,
+              theme.topperColor, i < 110 ? rand(5.5, 9.5) : rand(7.0, 12.5), i < 110 ? 0.52 : 0.95, rand(0, 6.28), rand(2.5, 4.5),
+              2, 0, 0, rand(0.86, 0.98)
+            );
+          }
+          pushPt(0, TREE_TOP_Y - 24, 0, 0, -160, 0, theme.topperColor, 54, 0.42, 0, 2.0, 2, 0, 2, 0.96);
+        }
+
+        // 7. Milky Way Spiral Galaxy Base (forms first at 0.0 .. 0.22!)
+        const rings = [
+          { rMin: 175, rMax: 230, count: 1800, speed: 0.24 },
+          { rMin: 242, rMax: 306, count: 1600, speed: -0.17 },
+          { rMin: 318, rMax: 392, count: 1400, speed: 0.11 }
+        ];
+        rings.forEach((ring, rIdx) => {
+          for (let i = 0; i < ring.count; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const radius = rand(ring.rMin, ring.rMax) + Math.sin(ang * 2 + rIdx) * 10;
+            const yOffset = rand(-4, 5) + Math.sin(ang * 3 + rIdx) * 2.5;
+            const [sx, sy, sz] = randomSpherePoint(260, 560);
+            pushPt(
+              Math.cos(ang) * radius, TREE_BASE_Y + 18 + yOffset, Math.sin(ang) * radius,
+              sx, sy + 120, sz,
+              pick(theme.ringColors), rand(4.5, 10.5), rand(0.32, 0.92), rand(0, 6.28), rand(1.6, 3.6),
+              1, ring.speed, 0, rIdx * 0.06 + rand(0, 0.08)
+            );
+          }
+        });
+
+        // 8. Falling 3D Snow (450) + Rising Stardust Embers (140)
+        for (let i = 0; i < 450; i++) {
+          pushPt(rand(-560, 560), rand(-430, 330), rand(-450, 450), 0, 0, 0, '#e0f2ff', rand(5.0, 11.5), rand(0.28, 0.78), rand(0, 6.28), rand(1.0, 2.2), 3, rand(20, 52), 2, 0);
+        }
+        for (let i = 0; i < 140; i++) {
+          const r = rand(35, 255), ang = Math.random() * Math.PI * 2;
+          pushPt(Math.cos(ang) * r, rand(-230, 240), Math.sin(ang) * r, 0, 0, 0, theme.accent, rand(6.0, 13.0), rand(0.32, 0.85), rand(0, 6.28), rand(2.0, 4.0), 4, rand(18, 46), 0, 0);
+        }
+
+        particleCount = rows.length / STRIDE_FLOATS;
+        const buf = new Float32Array(rows);
+        gl.bindBuffer(gl.ARRAY_BUFFER, staticVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
+      }
+
+      // ==================== Background 3D Willow Fireworks (GPU Dynamic Buffer) ====================
+      const rockets = [];
+      const fwSparks = [];
+      let fwTimer = 1.6;
+      const fwFloatBuffer = new Float32Array(2400 * STRIDE_FLOATS);
+
+      function launchFirework(xOverride, yOverride) {
+        if (!state.fireworksEnabled) return;
+        const theme = THEMES[currentThemeKey];
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const tx = xOverride !== undefined ? xOverride : side * rand(220, 410);
+        const ty = yOverride !== undefined ? yOverride : rand(-195, -75);
+        const tz = rand(-320, -170);
+        const color = pick(theme.fwColors);
+        rockets.push({
+          x: tx * 0.84,
+          y: 225,
+          z: tz,
+          vx: (tx - tx * 0.84) / 0.62,
+          vy: (ty - 225) / 0.62,
+          vz: 0,
+          life: 0.62,
+          color
+        });
+      }
+
+      function burstFirework(x, y, z, primaryHex) {
+        const theme = THEMES[currentThemeKey];
+        const secondaryHex = pick(theme.fwColors);
+        const count = 82;
+        for (let i = 0; i < count; i++) {
+          const u = Math.random();
+          const v = Math.random();
+          const theta = u * Math.PI * 2;
+          const phi = Math.acos(2 * v - 1);
+          const dirX = Math.sin(phi) * Math.cos(theta);
+          const dirY = Math.cos(phi);
+          const dirZ = Math.sin(phi) * Math.sin(theta) * 0.5;
+          const r0 = rand(8, 22);
+          const spd = rand(95, 220) * (0.76 + 0.36 * Math.random());
+          const col = i % 3 === 0 ? secondaryHex : primaryHex;
+          fwSparks.push({
+            x: x + dirX * r0, y: y + dirY * r0, z: z + dirZ * r0,
+            px1: x, py1: y, pz1: z,
+            px2: x, py2: y, pz2: z,
+            px3: x, py3: y, pz3: z,
+            vx: spd * dirX,
+            vy: spd * dirY - 18,
+            vz: spd * dirZ,
+            life: 1.0,
+            decay: rand(0.42, 0.72),
+            size: rand(9, 16),
+            color: hexToRgb01(col)
+          });
+        }
+      }
+
+      function updateFireworks(dt) {
+        if (state.fireworksEnabled && state.introProgress > 0.65) {
+          fwTimer -= dt;
+          if (fwTimer <= 0) {
+            launchFirework();
+            fwTimer = rand(2.1, 3.5);
+          }
+        }
+
+        for (let i = rockets.length - 1; i >= 0; i--) {
+          const r = rockets[i];
+          r.x += r.vx * dt;
+          r.y += r.vy * dt;
+          r.z += r.vz * dt;
+          r.life -= dt;
+          if (r.life <= 0) {
+            burstFirework(r.x, r.y, r.z, r.color);
+            rockets.splice(i, 1);
+          }
+        }
+
+        for (let i = fwSparks.length - 1; i >= 0; i--) {
+          const s = fwSparks[i];
+          s.px3 = s.px2; s.py3 = s.py2; s.pz3 = s.pz2;
+          s.px2 = s.px1; s.py2 = s.py1; s.pz2 = s.pz1;
+          s.px1 = s.x;   s.py1 = s.y;   s.pz1 = s.z;
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.z += s.vz * dt;
+          const drag = Math.pow(0.16, dt);
+          s.vx *= drag;
+          s.vz *= drag;
+          s.vy = s.vy * drag + 72 * dt;
+          s.life -= s.decay * dt;
+          if (s.life <= 0) fwSparks.splice(i, 1);
+        }
+
+        let vIdx = 0;
+        const maxVerts = 2400;
+
+        for (let i = 0; i < rockets.length && vIdx < maxVerts; i++) {
+          const r = rockets[i];
+          const [cr, cg, cb] = hexToRgb01(r.color);
+          const o = vIdx * STRIDE_FLOATS;
+          fwFloatBuffer[o] = r.x; fwFloatBuffer[o+1] = r.y; fwFloatBuffer[o+2] = r.z;
+          fwFloatBuffer[o+6] = cr; fwFloatBuffer[o+7] = cg; fwFloatBuffer[o+8] = cb;
+          fwFloatBuffer[o+9] = 18; fwFloatBuffer[o+10] = 0.85;
+          fwFloatBuffer[o+13] = 6; fwFloatBuffer[o+15] = 0; fwFloatBuffer[o+16] = 0;
+          vIdx++;
+        }
+
+        for (let i = 0; i < fwSparks.length && vIdx + 4 <= maxVerts; i++) {
+          const s = fwSparks[i];
+          const [cr, cg, cb] = s.color;
+          const pts = [
+            [s.x, s.y, s.z, s.size, 0.92 * s.life, 0],
+            [s.px1, s.py1, s.pz1, s.size * 0.82, 0.58 * s.life, 2],
+            [s.px2, s.py2, s.pz2, s.size * 0.64, 0.34 * s.life, 2],
+            [s.px3, s.py3, s.pz3, s.size * 0.48, 0.16 * s.life, 2]
+          ];
+          for (let k = 0; k < 4; k++) {
+            const o = vIdx * STRIDE_FLOATS;
+            fwFloatBuffer[o] = pts[k][0]; fwFloatBuffer[o+1] = pts[k][1]; fwFloatBuffer[o+2] = pts[k][2];
+            fwFloatBuffer[o+6] = cr; fwFloatBuffer[o+7] = cg; fwFloatBuffer[o+8] = cb;
+            fwFloatBuffer[o+9] = pts[k][3]; fwFloatBuffer[o+10] = pts[k][4];
+            fwFloatBuffer[o+13] = 6; fwFloatBuffer[o+15] = pts[k][5]; fwFloatBuffer[o+16] = 0;
+            vIdx++;
+          }
+        }
+        return vIdx;
+      }
+
+      // ==================== 2D Overlay (Photos & Click Bursts) ====================
       let photoFrames = [];
       let bursts = [];
 
@@ -1200,6 +1338,19 @@
         return { sx: cx + rx * scale, sy: cy + ry * scale, scale, depth: zCam };
       }
 
+      const greetingEl = document.getElementById('greetingOverlay');
+
+      function startOpeningAnimation() {
+        state.introProgress = 0;
+        state.introDone = false;
+        state.rotY = -0.9;
+        state.targetRotY = 0;
+        fwTimer = 1.9;
+        rockets.length = 0;
+        fwSparks.length = 0;
+        greetingEl.classList.remove('visible');
+      }
+
       // ==================== Resize & Render Loop ====================
       function resize() {
         state.width = window.innerWidth;
@@ -1219,8 +1370,25 @@
         state.time += dt;
         if (state.pinchCooldown > 0) state.pinchCooldown -= dt;
 
+        // Advance opening draw-in (~4.1 seconds total)
+        if (!state.introDone) {
+          state.introProgress += dt * 0.33;
+          if (state.introProgress >= 0.72 && !greetingEl.classList.contains('visible')) {
+            greetingEl.classList.add('visible');
+          }
+          if (state.introProgress >= 1.05 && state.fireworksEnabled && rockets.length === 0 && fwSparks.length === 0) {
+            launchFirework(-310, -145);
+            launchFirework(310, -130);
+          }
+          if (state.introProgress >= 1.38) {
+            state.introProgress = 1.38;
+            state.introDone = true;
+          }
+        }
+
         if (!state.isDragging) {
-          state.targetRotY += (state.autoRotateSpeed * (dt * 60)) + state.velY + state.handRotBias * dt * 2.2;
+          const rotBoost = state.introDone ? 1.0 : 1.7;
+          state.targetRotY += (state.autoRotateSpeed * rotBoost * (dt * 60)) + state.velY + state.handRotBias * dt * 2.2;
           state.velY *= Math.pow(0.92, dt * 60);
         }
         state.rotY += (state.targetRotY - state.rotY) * Math.min(1, dt * 8);
@@ -1232,13 +1400,13 @@
         const h = state.height;
         const isPortrait = w < h;
         const minDim = Math.min(w, h);
-        const fov = (isPortrait ? w * 0.78 : minDim * 0.80) * state.zoom;
+        const fov = (isPortrait ? w * 0.78 : minDim * 0.78) * state.zoom;
         const camDist = 665;
         const cx = w * 0.5;
-        const cy = h * (isPortrait ? 0.45 : 0.435);
+        const cy = h * (isPortrait ? 0.44 : 0.415);
         const topAngle = Math.sin(state.time * 1.1) * 0.28;
 
-        // GPU WebGL Pass (16,000+ particles in a single draw call!)
+        // GPU WebGL Pass
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.enable(gl.BLEND);
@@ -1246,6 +1414,7 @@
         gl.disable(gl.DEPTH_TEST);
 
         gl.uniform1f(loc.uTime, state.time);
+        gl.uniform1f(loc.uIntro, state.introProgress);
         gl.uniform1f(loc.uScatter, state.scatter);
         gl.uniform1f(loc.uRotY, state.rotY);
         gl.uniform1f(loc.uRotX, state.rotX);
@@ -1256,27 +1425,39 @@
         gl.uniform2f(loc.uCenter, cx, cy);
         gl.uniform1f(loc.uDpr, state.dpr);
 
+        // Pass A: Background 3D Fireworks
+        const fwCount = updateFireworks(dt);
+        if (fwCount > 0) {
+          gl.bindBuffer(gl.ARRAY_BUFFER, fwVbo);
+          gl.bufferData(gl.ARRAY_BUFFER, fwFloatBuffer.subarray(0, fwCount * STRIDE_FLOATS), gl.DYNAMIC_DRAW);
+          bindBufferAttribs(fwVbo);
+          gl.drawArrays(gl.POINTS, 0, fwCount);
+        }
+
+        // Pass B: Christmas Tree, Galaxy Disc, Topper & Snow
+        bindBufferAttribs(staticVbo);
         gl.drawArrays(gl.POINTS, 0, particleCount);
 
-        // Lightweight 2D Overlay Pass (ONLY if Polaroid photos or click bursts are active)
+        // Lightweight 2D Overlay (Polaroids & Click Sparkles)
         if (photoFrames.length > 0 || bursts.length > 0) {
           ovCtx.clearRect(0, 0, w, h);
-          const sc = state.scatter;
+          const sc = Math.max(state.scatter, Math.max(0, 1 - state.introProgress));
           const swirl = sc * 2.2;
           const swSin = Math.sin(swirl), swCos = Math.cos(swirl);
           const sinY = Math.sin(state.rotY), cosY = Math.cos(state.rotY);
           const sinX = Math.sin(state.rotX), cosX = Math.cos(state.rotX);
 
-          if (photoFrames.length > 0) {
+          if (photoFrames.length > 0 && state.introProgress > 0.7) {
             ovCtx.globalCompositeOperation = 'source-over';
+            const fade = Math.min(1, (state.introProgress - 0.7) / 0.4);
             const projectedFrames = [];
             for (let i = 0; i < photoFrames.length; i++) {
               const pf = photoFrames[i];
               if (!pf.img.complete || pf.img.naturalWidth === 0) { pf.screenRect = null; continue; }
-              let px = pf.tx + (pf.sx - pf.tx) * sc;
-              let py = pf.ty + (pf.sy - pf.ty) * sc;
-              let pz = pf.tz + (pf.sz - pf.tz) * sc;
-              if (sc > 0.01) {
+              let px = pf.tx + (pf.sx - pf.tx) * state.scatter;
+              let py = pf.ty + (pf.sy - pf.ty) * state.scatter;
+              let pz = pf.tz + (pf.sz - pf.tz) * state.scatter;
+              if (state.scatter > 0.01) {
                 const nx = px * swCos - pz * swSin;
                 const nz = px * swSin + pz * swCos;
                 px = nx; pz = nz;
@@ -1290,7 +1471,7 @@
             const theme = THEMES[currentThemeKey];
             for (let i = 0; i < projectedFrames.length; i++) {
               const { pf, p } = projectedFrames[i];
-              const cardW = (34 + sc * 18) * p.scale;
+              const cardW = (34 + state.scatter * 18) * p.scale;
               const cardH = cardW * 1.2;
               const pad = cardW * 0.09;
               pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
@@ -1298,7 +1479,7 @@
               ovCtx.save();
               ovCtx.translate(p.sx, p.sy);
               ovCtx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.04);
-              ovCtx.globalAlpha = 0.96;
+              ovCtx.globalAlpha = 0.96 * fade;
               ovCtx.shadowColor = hexToRgba(theme.accent, 0.55);
               ovCtx.shadowBlur = 12 * p.scale;
               ovCtx.fillStyle = '#fcfaf5';
@@ -1413,13 +1594,23 @@
       });
 
       function onPointerEnd(e) {
-        if (activePointers.size === 1 && state.dragMoved < 8 && photoFrames.length > 0) {
-          for (let i = photoFrames.length - 1; i >= 0; i--) {
-            const r = photoFrames[i].screenRect;
-            if (r && e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h) {
-              openPhotoModal(photoFrames[i]);
-              break;
+        if (activePointers.size === 1 && state.dragMoved < 8) {
+          let hitPhoto = false;
+          if (photoFrames.length > 0) {
+            for (let i = photoFrames.length - 1; i >= 0; i--) {
+              const r = photoFrames[i].screenRect;
+              if (r && e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h) {
+                openPhotoModal(photoFrames[i]);
+                hitPhoto = true;
+                break;
+              }
             }
+          }
+          // Clicking upper sky launches a firework!
+          if (!hitPhoto && state.fireworksEnabled && e.clientY < state.height * 0.55 && Math.abs(e.clientX - state.width * 0.5) > state.width * 0.14) {
+            const worldX = ((e.clientX - state.width * 0.5) / state.width) * 760;
+            const worldY = ((e.clientY - state.height * 0.45) / state.height) * 520;
+            launchFirework(worldX, Math.min(-70, worldY));
           }
         }
         activePointers.delete(e.pointerId);
@@ -1446,6 +1637,13 @@
 
       document.getElementById('btnScatter').addEventListener('click', toggleScatter);
       document.getElementById('dockScatter').addEventListener('click', toggleScatter);
+      document.getElementById('btnReplay').addEventListener('click', startOpeningAnimation);
+
+      document.getElementById('btnFireworks').addEventListener('click', () => {
+        state.fireworksEnabled = !state.fireworksEnabled;
+        document.getElementById('btnFireworks').classList.toggle('active', state.fireworksEnabled);
+        if (state.fireworksEnabled) launchFirework();
+      });
 
       window.addEventListener('keydown', (e) => {
         if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
@@ -1741,6 +1939,9 @@
         setTheme(k) { applyTheme(k); },
         setTopper(m) { setTopper(m); },
         setScatter(on) { setScatter(on); },
+        setIntro(v) { state.introProgress = v; state.introDone = v >= 1.38; if (v >= 0.72) greetingEl.classList.add('visible'); },
+        replay() { startOpeningAnimation(); },
+        launchFirework(x, y) { launchFirework(x, y); },
         setCamera(rotX, zoom) { state.targetRotX = rotX; state.targetZoom = zoom; },
         burst(x, y) { spawnBurst(x, y); }
       };
@@ -1749,6 +1950,7 @@
       resize();
       setTopper(topperMode);
       applyTheme(currentThemeKey);
+      startOpeningAnimation();
       requestAnimationFrame(rafLoop);
     })();
   </script>
