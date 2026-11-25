@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Interactive 3D GPU Particle Christmas Tree · Animated Draw-In, Streak Fireworks & Nebula Physics" />
+  <meta name="description" content="Interactive 3D GPU Particle Christmas Tree · 3D Rotating Star/Heart, Multi-Style Fireworks & Nebula Physics" />
   <title>Merry Christmas · 3D Particle Tree</title>
   <style>
     :root {
@@ -40,18 +40,27 @@
       display: block;
     }
 
-    canvas#glScene { z-index: 1; }
-    canvas#overlayScene { z-index: 2; cursor: grab; touch-action: none; }
+    canvas#glScene { z-index: 2; pointer-events: none; }
+    canvas#overlayScene { z-index: 3; cursor: grab; touch-action: none; }
+    canvas#fwBackScene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+      pointer-events: none;
+    }
+
     canvas#overlayScene:active { cursor: grabbing; }
 
-    /* Subtle dark atmospheric fade at bottom so typography always reads crisply */
     .bottom-scrim {
       position: fixed;
       left: 0;
       right: 0;
       bottom: 0;
       height: 24%;
-      background: linear-gradient(to top, rgba(2, 3, 8, 0.78) 0%, rgba(2, 3, 8, 0.35) 55%, rgba(2, 3, 8, 0) 100%);
+      background: linear-gradient(to top, rgba(2, 3, 8, 0.8) 0%, rgba(2, 3, 8, 0.36) 55%, rgba(2, 3, 8, 0) 100%);
       pointer-events: none;
       z-index: 4;
     }
@@ -480,6 +489,7 @@
   </style>
 </head>
 <body>
+  <canvas id="fwBackScene"></canvas>
   <canvas id="glScene"></canvas>
   <canvas id="overlayScene"></canvas>
   <div class="bottom-scrim"></div>
@@ -513,7 +523,7 @@
     <div class="toolbar-btns">
       <button class="pill-btn hide-in-zen" id="btnReplay" title="Replay Opening Animation">🎬 Replay</button>
       <button class="pill-btn hide-in-zen" id="btnScatter" title="Scatter / Gather Particles">✨ Scatter</button>
-      <button class="pill-btn hide-in-zen active" id="btnFireworks" title="Toggle Background Fireworks">🎆 Fireworks</button>
+      <button class="pill-btn hide-in-zen active" id="btnFireworks" title="Toggle Festive Fireworks">🎆 Fireworks</button>
       <button class="pill-btn hide-in-zen" id="btnPhotos" title="Hang Polaroid Photos on Tree">📷 Photos</button>
       <button class="pill-btn hide-in-zen" id="btnMusic" title="Play Christmas Music Box">🎵 Music</button>
       <button class="pill-btn hide-in-zen" id="btnGesture" title="Hand Gesture Control">🖐️ Gesture</button>
@@ -601,6 +611,8 @@
 
   <script>
     (() => {
+      const fwBackCanvas = document.getElementById('fwBackScene');
+      const fwBackCtx = fwBackCanvas.getContext('2d');
       const glCanvas = document.getElementById('glScene');
       const ovCanvas = document.getElementById('overlayScene');
       const ovCtx = ovCanvas.getContext('2d');
@@ -616,16 +628,15 @@
       const THEMES = {
         gold: {
           name: 'Champagne Gold',
-          bgCss: 'radial-gradient(circle at 50% 42%, #1d1109 0%, #0b0710 52%, #020308 100%)',
+          bgCss: 'radial-gradient(circle at 50% 42%, #1b1008 0%, #0a0710 52%, #020308 100%)',
           titleColor: '#fff7e6',
           titleGlow: 'rgba(255, 210, 122, 0.85)',
           treeColors: ['#fff6dc', '#ffd878', '#ffb84d', '#f28b2c', '#ffe49e'],
           ribbonColors: ['#ffffff', '#fff0c2', '#ffd36b'],
           ornamentColors: ['#fff5d6', '#ffd166', '#ff824a', '#ffffff'],
           ringColors: ['#ffe4a3', '#ffb95c', '#ffd68a'],
-          fwColors: ['#ffd87a', '#ff9852', '#ffeeb8', '#ff6f7d'],
           topperColor: '#ffd470',
-          topperCore: '#fff6d8',
+          topperRidge: '#fff7de',
           accent: '#ffd88a'
         },
         pink: {
@@ -637,9 +648,8 @@
           ribbonColors: ['#ffffff', '#ffd6ed', '#ff8ace'],
           ornamentColors: ['#fff0f6', '#ff9cd2', '#ffe0a3', '#d08eff'],
           ringColors: ['#ffb8de', '#d88cff', '#ff94c8'],
-          fwColors: ['#ff8ed0', '#ffe2a8', '#d08eff', '#ff649c'],
           topperColor: '#ff7ec4',
-          topperCore: '#fff0f7',
+          topperRidge: '#fff0f8',
           accent: '#ff94c8'
         },
         cyber: {
@@ -651,9 +661,8 @@
           ribbonColors: ['#ffffff', '#c0f5ff', '#5ad6ff'],
           ornamentColors: ['#ffe694', '#6ee5ff', '#ffffff', '#7aa2ff'],
           ringColors: ['#a6eeff', '#4dc0ff', '#7ce8ff'],
-          fwColors: ['#70e6ff', '#ffe694', '#8ea8ff', '#ffffff'],
           topperColor: '#78e6ff',
-          topperCore: '#effcff',
+          topperRidge: '#effcff',
           accent: '#7ce8ff'
         },
         aurora: {
@@ -665,12 +674,21 @@
           ribbonColors: ['#ffffff', '#b8ffe2', '#64f2ff'],
           ornamentColors: ['#ffe58f', '#ff7aa8', '#6effc8', '#ffffff'],
           ringColors: ['#7effce', '#5cc5ff', '#9effd3'],
-          fwColors: ['#6effc8', '#64f2ff', '#ffe58f', '#ff8cc8'],
           topperColor: '#ff8cc8',
-          topperCore: '#fff2fa',
+          topperRidge: '#fff2fa',
           accent: '#6effb8'
         }
       };
+
+      // Rich Festive Multi-Color Firework Palettes (not locked to single monochrome!)
+      const FIREWORK_PALETTES = [
+        ['#ffd878', '#ff5e7e', '#fff4cc'], // Gold & Crimson
+        ['#5ce6ff', '#ff7ae2', '#e8faff'], // Cyan & Magenta
+        ['#5effb8', '#ffd266', '#ffffff'], // Emerald & Gold
+        ['#ff9d5c', '#c77dff', '#ffe8a3'], // Sunset Amber & Violet
+        ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff'], // Festive Rainbow
+        ['#ffe5a3', '#ffb3d9', '#a6eeff']  // Pastel Champagne
+      ];
 
       const DEDICATION_PRESETS = {
         classic: {
@@ -710,7 +728,7 @@
         targetRotX: 0.095,
         zoom: 1,
         targetZoom: 1,
-        autoRotateSpeed: 0.0042,
+        autoRotateSpeed: 0.0048,
         isDragging: false,
         dragMoved: 0,
         lastX: 0,
@@ -755,7 +773,7 @@
         ];
       }
 
-      // ==================== WebGL Shader Program (Tree & Galaxy) ====================
+      // ==================== WebGL Shader Program (Tree & 3D Rotating Topper) ====================
       const VS_SRC = `
         attribute vec3 aTreePos;
         attribute vec3 aScatterPos;
@@ -768,7 +786,6 @@
         uniform float uScatter;
         uniform float uRotY;
         uniform float uRotX;
-        uniform float uTopRotY;
         uniform float uFov;
         uniform float uCamDist;
         uniform vec2 uResolution;
@@ -794,10 +811,10 @@
 
           float localP = clamp((uIntro - aMeta.w) / 0.30, 0.0, 1.0);
           float arrive = 1.0 - pow(1.0 - localP, 3.0);
-          float lockFlash = exp(-pow((localP - 0.88) * 6.0, 2.0)) * 0.55;
+          float lockFlash = exp(-pow((localP - 0.88) * 6.0, 2.0)) * 0.48;
 
           vec3 pos = aTreePos;
-          float angleY = uRotY;
+          float angleY = uRotY; // Tree AND Topper rotate smoothly together in true 3D!
           float effScatter = max(uScatter, 1.0 - arrive);
 
           if (pType < 0.5) {
@@ -816,8 +833,8 @@
             ringPos.y += sin(uTime * 1.8 + aParams.z) * 2.2;
             pos = mix(ringPos, aScatterPos, (1.0 - arrive) * 0.75);
           } else if (pType < 2.5) {
+            // 3D Sculpted Topper rotates smoothly in 3D with uRotY (slightly faster spin or synced)
             pos = mix(aTreePos, aScatterPos, effScatter);
-            angleY = mix(uTopRotY, uRotY, effScatter);
           } else if (pType < 3.5) {
             float span = 760.0;
             pos.y = mod(aTreePos.y + uTime * aMeta.y + 430.0, span) - 430.0;
@@ -866,7 +883,7 @@
             ptSize *= (0.7 + 0.6 * max(0.0, sin(uTime * aParams.w + aParams.z)));
           }
           gl_PointSize = clamp(ptSize, 1.0, 96.0);
-          vAlpha = clamp((aParams.y + lockFlash * 0.35) * twinkle * depthAtten, 0.0, 1.0);
+          vAlpha = clamp((aParams.y + lockFlash * 0.3) * twinkle * depthAtten, 0.0, 1.0);
         }
       `;
 
@@ -885,8 +902,8 @@
           vec3 col = vColor;
 
           if (vShape < 0.5) {
-            float core = exp(-d2 * 56.0);
-            float halo = exp(-d2 * 9.5) * 0.68;
+            float core = exp(-d2 * 64.0);
+            float halo = exp(-d2 * 10.5) * 0.62;
             intensity = core + halo;
             col = mix(vColor * 1.18, vec3(1.0), core * 0.72);
           } else if (vShape < 1.5) {
@@ -897,8 +914,8 @@
             intensity = core * 0.95 + (rayH + rayV) * 0.78;
             col = mix(vColor * 1.15, vec3(1.0), clamp(core + (rayH + rayV) * 0.48, 0.0, 1.0));
           } else {
-            float core = exp(-d2 * 32.0);
-            float halo = exp(-d2 * 8.2) * 0.76;
+            float core = exp(-d2 * 34.0);
+            float halo = exp(-d2 * 8.5) * 0.72;
             intensity = core * 0.9 + halo;
             col = mix(vColor * 1.18, vec3(1.0), core * 0.68);
           }
@@ -933,7 +950,6 @@
         uScatter: gl.getUniformLocation(program, 'uScatter'),
         uRotY: gl.getUniformLocation(program, 'uRotY'),
         uRotX: gl.getUniformLocation(program, 'uRotX'),
-        uTopRotY: gl.getUniformLocation(program, 'uTopRotY'),
         uFov: gl.getUniformLocation(program, 'uFov'),
         uCamDist: gl.getUniformLocation(program, 'uCamDist'),
         uResolution: gl.getUniformLocation(program, 'uResolution'),
@@ -961,7 +977,6 @@
         gl.vertexAttribPointer(loc.aMeta, 4, gl.FLOAT, false, stride, 13 * bpe);
       }
 
-      // Taller, more graceful fir proportions
       const TREE_HEIGHT = 446;
       const TREE_BASE_Y = 205;
       const TREE_TOP_Y = TREE_BASE_Y - TREE_HEIGHT; // -241
@@ -987,9 +1002,9 @@
           pushPt(Math.random(), Math.random(), 0, 0, 0, 0, '#ffffff', rand(1.2, 3.0), rand(0.25, 0.85), rand(0, 6.28), rand(0.8, 2.5), 5, 0, 0, 0);
         }
 
-        // 2. Outer Velvet Silhouette Cone (5,400 crisp pinpoint stardust)
+        // 2. Outer Velvet Silhouette Cone (area-weighted hNorm^0.52 + top taper so spire NEVER clumps into white blob!)
         for (let i = 0; i < 5400; i++) {
-          const hNorm = Math.pow(Math.random(), 0.76);
+          const hNorm = 0.03 + 0.97 * Math.pow(Math.random(), 0.52);
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
           const wave = 1 + 0.085 * Math.sin(hNorm * Math.PI * 10);
           const maxR = hNorm * TREE_RADIUS * wave;
@@ -997,53 +1012,55 @@
           const r = maxR * radialBias;
           const ang = Math.random() * Math.PI * 2;
           const [sx, sy, sz] = randomSpherePoint(200, 560);
+          const tipScale = 0.52 + 0.48 * hNorm;
           const order = 0.14 + (1.0 - hNorm) * 0.72 + rand(-0.035, 0.035);
           pushPt(
             Math.cos(ang) * r, y, Math.sin(ang) * r,
             sx, sy, sz,
-            pick(theme.treeColors), rand(4.2, 10.5), rand(0.45, 0.92), rand(0, 6.28), rand(1.6, 4.4),
+            pick(theme.treeColors), rand(4.0, 9.8) * tipScale, rand(0.42, 0.90) * (0.65 + 0.35 * hNorm), rand(0, 6.28), rand(1.6, 4.4),
             0, 0, 0, order
           );
         }
 
-        // 3. Soft Volumetric Inner Mist (2,400)
+        // 3. Soft Volumetric Inner Mist (area-weighted so top spire stays clean & delicate!)
         for (let i = 0; i < 2400; i++) {
-          const hNorm = Math.pow(Math.random(), 0.75);
+          const hNorm = 0.06 + 0.94 * Math.pow(Math.random(), 0.52);
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * rand(0.05, 0.7);
+          const r = hNorm * TREE_RADIUS * rand(0.06, 0.70);
           const ang = Math.random() * Math.PI * 2;
           const [sx, sy, sz] = randomSpherePoint(160, 480);
           const order = 0.14 + (1.0 - hNorm) * 0.72 + rand(-0.035, 0.035);
           pushPt(
             Math.cos(ang) * r, y, Math.sin(ang) * r,
             sx, sy, sz,
-            pick(theme.treeColors), rand(6.0, 13.0), rand(0.16, 0.36), rand(0, 6.28), rand(1.2, 3.0),
+            pick(theme.treeColors), rand(5.5, 11.5) * (0.55 + 0.45 * hNorm), rand(0.14, 0.32) * (0.55 + 0.45 * hNorm), rand(0, 6.28), rand(1.2, 3.0),
             0, 0, 2, order
           );
         }
 
-        // 4. Sweeping Tight Double-Helix Diamond Light Garlands (3,000 particles)
+        // 4. Arc-length uniform Spiral Garlands (t^0.56 spacing prevents overcrowding at top spire!)
         const turns = 6.8;
-        for (let i = 0; i < 3000; i++) {
+        for (let i = 0; i < 2800; i++) {
           const strand = i % 2;
-          const t = i / 3000;
-          const jt = Math.min(1, Math.max(0, t + rand(-0.006, 0.006)));
+          const t = Math.pow((i + 0.5) / 2800, 0.56);
+          const jt = Math.min(1, Math.max(0.035, t + rand(-0.004, 0.004)));
           const y = TREE_TOP_Y + jt * TREE_HEIGHT;
-          const r = jt * TREE_RADIUS * 1.035 + rand(-2.5, 2.8);
-          const ang = jt * turns * Math.PI * 2 + strand * Math.PI + rand(-0.06, 0.06);
+          const r = jt * TREE_RADIUS * 1.035 + rand(-2.2, 2.4);
+          const ang = jt * turns * Math.PI * 2 + strand * Math.PI + rand(-0.05, 0.05);
           const [sx, sy, sz] = randomSpherePoint(220, 560);
+          const tipTaper = 0.58 + 0.42 * jt;
           const order = 0.16 + (1.0 - jt) * 0.72;
           pushPt(
             Math.cos(ang) * r, y, Math.sin(ang) * r,
             sx, sy, sz,
-            pick(theme.ribbonColors), rand(6.0, 12.5), rand(0.7, 1.0), rand(0, 6.28), rand(2.2, 5.0),
+            pick(theme.ribbonColors), rand(5.2, 10.5) * tipTaper, rand(0.55, 0.92) * tipTaper, rand(0, 6.28), rand(2.2, 5.0),
             0, 0, 0, order
           );
         }
 
         // 5. Luminous Fairy-Light Orbs (75) + 4-Point Sparkle Diamonds (55)
         for (let i = 0; i < 75; i++) {
-          const hNorm = 0.12 + (i / 75) * 0.85;
+          const hNorm = 0.15 + (i / 75) * 0.82;
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT + rand(-4, 4);
           const r = hNorm * TREE_RADIUS * rand(0.92, 1.05);
           const ang = i * 2.39996 + rand(-0.15, 0.15);
@@ -1051,12 +1068,12 @@
           pushPt(
             Math.cos(ang) * r, y, Math.sin(ang) * r,
             sx, sy, sz,
-            theme.ornamentColors[i % theme.ornamentColors.length], rand(17, 26), rand(0.75, 0.96), rand(0, 6.28), rand(1.4, 3.0),
+            theme.ornamentColors[i % theme.ornamentColors.length], rand(15, 23), rand(0.72, 0.95), rand(0, 6.28), rand(1.4, 3.0),
             0, 0, 2, 0.16 + (1.0 - hNorm) * 0.72
           );
         }
         for (let i = 0; i < 55; i++) {
-          const hNorm = 0.1 + (i / 55) * 0.87;
+          const hNorm = 0.14 + (i / 55) * 0.83;
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
           const r = hNorm * TREE_RADIUS * rand(0.95, 1.06);
           const ang = i * 2.39996 + 1.1;
@@ -1064,41 +1081,69 @@
           pushPt(
             Math.cos(ang) * r, y, Math.sin(ang) * r,
             sx, sy, sz,
-            '#ffffff', rand(19, 32), rand(0.7, 1.0), rand(0, 6.28), rand(1.8, 3.8),
+            '#ffffff', rand(18, 28), rand(0.68, 0.96), rand(0, 6.28), rand(1.8, 3.8),
             0, 0, 1, 0.16 + (1.0 - hNorm) * 0.72
           );
         }
 
-        // 6. Symmetrical Uniform-Sampled Tree Topper Particles (pair with precision vector jewel on overlay!)
+        // 6. True 3D Sculpted Rotating Star & Heart Topper (rotates 360 in 3D with the tree!)
+        const topCY = TREE_TOP_Y - 36; // Clean floating crown spacing above spire
         if (topperMode === 'star') {
-          const ptsPerEdge = 36;
-          const outerR = 30, innerR = 12.5;
-          for (let edge = 0; edge < 10; edge++) {
-            const a1 = (edge * Math.PI) / 5 - Math.PI / 2;
-            const a2 = ((edge + 1) * Math.PI) / 5 - Math.PI / 2;
-            const r1 = edge % 2 === 0 ? outerR : innerR;
-            const r2 = (edge + 1) % 2 === 0 ? outerR : innerR;
-            for (let k = 0; k < ptsPerEdge; k++) {
-              const t = k / ptsPerEdge;
-              const px = Math.cos(a1) * r1 * (1 - t) + Math.cos(a2) * r2 * t;
-              const py = Math.sin(a1) * r1 * (1 - t) + Math.sin(a2) * r2 * t;
-              const [sx, sy, sz] = randomSpherePoint(140, 350);
-              pushPt(px, TREE_TOP_Y - 26 + py, 0, sx, sy - 160, sz, theme.topperColor, 6.5, 0.88, (edge * ptsPerEdge + k) * 0.08, 3.2, 2, 0, 0, 0.90 + (edge / 10) * 0.07);
+          const outerR = 29, innerR = 12, depthZ = 10.5;
+          const pts = [];
+          for (let i = 0; i < 10; i++) {
+            const a = (i * Math.PI) / 5 - Math.PI / 2;
+            const r = i % 2 === 0 ? outerR : innerR;
+            pts.push([Math.cos(a) * r, Math.sin(a) * r, 0]);
+          }
+          const apexF = [0, 0, depthZ];
+          const apexB = [0, 0, -depthZ];
+
+          function sampleEdge(p1, p2, steps, col, sz, al) {
+            for (let k = 0; k <= steps; k++) {
+              const t = k / steps;
+              const px = p1[0] + (p2[0] - p1[0]) * t;
+              const py = p1[1] + (p2[1] - p1[1]) * t;
+              const pz = p1[2] + (p2[2] - p1[2]) * t;
+              const [sx, sy, sz0] = randomSpherePoint(140, 350);
+              pushPt(px, topCY + py, pz, sx, sy - 160, sz0, col, sz, al, k * 0.2, 2.8, 2, 0, 0, 0.90 + t * 0.06);
             }
           }
+
+          for (let i = 0; i < 10; i++) {
+            const pA = pts[i], pB = pts[(i + 1) % 10];
+            sampleEdge(pA, pB, 18, theme.topperRidge, 6.2, 0.96);
+            sampleEdge(pA, apexF, 11, theme.topperColor, 4.8, 0.68);
+            sampleEdge(pA, apexB, 11, theme.topperColor, 4.8, 0.68);
+          }
+          for (let i = 0; i < 45; i++) {
+            const [ox, oy, oz] = randomSpherePoint(0, 9);
+            const [sx, sy, sz0] = randomSpherePoint(140, 350);
+            pushPt(ox, topCY + oy, oz, sx, sy - 160, sz0, theme.topperColor, 6.5, 0.56, i * 0.3, 3.2, 2, 0, 2, 0.94);
+          }
         } else {
-          const heartCount = 320;
-          for (let i = 0; i < heartCount; i++) {
-            const t = (i / heartCount) * Math.PI * 2;
-            const hx = 16 * Math.pow(Math.sin(t), 3);
-            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-            const scale = 1.72;
-            const [sx, sy, sz] = randomSpherePoint(140, 350);
-            pushPt(hx * scale, TREE_TOP_Y - 30 + hy * scale, 0, sx, sy - 160, sz, theme.topperColor, 6.5, 0.88, i * 0.08, 3.2, 2, 0, 0, 0.90 + (i / heartCount) * 0.07);
+          const ringSteps = 220;
+          const hScale = 1.65;
+          for (let i = 0; i < ringSteps; i++) {
+            const t = (i / ringSteps) * Math.PI * 2;
+            const hx = 16 * Math.pow(Math.sin(t), 3) * hScale;
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale;
+            const [sx, sy, sz0] = randomSpherePoint(140, 350);
+            pushPt(hx, topCY + hy, 0, sx, sy - 160, sz0, theme.topperRidge, 6.4, 0.96, i * 0.1, 2.8, 2, 0, 0, 0.90 + (i / ringSteps) * 0.06);
+          }
+          for (let i = 0; i < 360; i++) {
+            const t = Math.random() * Math.PI * 2;
+            const u = Math.sqrt(Math.random());
+            const hx = 16 * Math.pow(Math.sin(t), 3) * hScale * u;
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale * u;
+            const side = i % 2 === 0 ? 1 : -1;
+            const hz = side * 12.5 * Math.sqrt(Math.max(0, 1 - u * u));
+            const [sx, sy, sz0] = randomSpherePoint(140, 350);
+            pushPt(hx, topCY + hy, hz, sx, sy - 160, sz0, theme.topperColor, rand(5.2, 8.2), rand(0.55, 0.86), i * 0.15, 2.6, 2, 0, 0, 0.91 + u * 0.05);
           }
         }
 
-        // 7. Milky Way Spiral Galaxy Base (sleeker radius so it clears bottom text cleanly)
+        // 7. Milky Way Spiral Galaxy Base
         const rings = [
           { rMin: 165, rMax: 215, count: 1600, speed: 0.24 },
           { rMin: 226, rMax: 285, count: 1500, speed: -0.17 },
@@ -1113,7 +1158,7 @@
             pushPt(
               Math.cos(ang) * radius, TREE_BASE_Y + 14 + yOffset, Math.sin(ang) * radius,
               sx, sy + 120, sz,
-              pick(theme.ringColors), rand(4.2, 9.6), rand(0.32, 0.90), rand(0, 6.28), rand(1.6, 3.6),
+              pick(theme.ringColors), rand(4.2, 9.4), rand(0.32, 0.88), rand(0, 6.28), rand(1.6, 3.6),
               1, ring.speed, 0, rIdx * 0.06 + rand(0, 0.08)
             );
           }
@@ -1134,260 +1179,316 @@
         gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
       }
 
-      // ==================== Continuous Light-Streak Fireworks (2D Additive Overlay) ====================
+      // ==================== Multi-Depth, Multi-Color, 4-Style Fireworks ====================
       const rockets = [];
       const fwStreaks = [];
       const fwFlashes = [];
-      let fwTimer = 1.6;
+      let fwTimer = 1.4;
 
-      function launchFirework(xScreenNorm, yScreenNorm) {
+      function pickFireworkZone(xNormOverride, yNormOverride) {
+        if (xNormOverride !== undefined) return { xN: xNormOverride, yN: yNormOverride, layer: 'back', depthScale: rand(0.85, 1.18) };
+        const roll = Math.random();
+        let layer = 'back';
+        let depthScale = 1.0;
+        if (roll < 0.32) { layer = 'back'; depthScale = rand(0.55, 0.78); }        // Far distant
+        else if (roll < 0.78) { layer = 'back'; depthScale = rand(0.90, 1.25); }   // Mid grand burst
+        else { layer = 'front'; depthScale = rand(1.15, 1.48); }                   // Wide foreground willow!
+
+        // Spread freely across the whole sky! Far bursts can even peek behind upper tree flanks
+        let xN;
+        if (layer === 'back') {
+          xN = Math.random() < 0.5 ? rand(0.08, 0.42) : rand(0.58, 0.92);
+        } else {
+          xN = Math.random() < 0.5 ? rand(0.08, 0.30) : rand(0.70, 0.92);
+        }
+        const yN = rand(0.12, 0.38);
+        return { xN, yN, layer, depthScale };
+      }
+
+      function launchFirework(xScreenNorm, yScreenNorm, forcedStyle) {
         if (!state.fireworksEnabled) return;
-        const theme = THEMES[currentThemeKey];
         const w = state.width, h = state.height;
-        const side = Math.random() < 0.5 ? -1 : 1;
-        const tx = xScreenNorm !== undefined ? xScreenNorm * w : w * (0.5 + side * rand(0.24, 0.38));
-        const ty = yScreenNorm !== undefined ? yScreenNorm * h : h * rand(0.16, 0.34);
-        const startX = tx + rand(-35, 35);
-        const startY = h * 0.72;
-        const color = pick(theme.fwColors);
+        const zone = pickFireworkZone(xScreenNorm, yScreenNorm);
+        const tx = zone.xN * w;
+        const ty = zone.yN * h;
+        const startX = tx + rand(-40, 40);
+        const startY = h * 0.78;
+        const palette = pick(FIREWORK_PALETTES);
+        const styles = ['chrysanthemum', 'willow', 'doubleRing', 'glitterPop'];
+        const style = forcedStyle || pick(styles);
+
         rockets.push({
           x: startX, y: startY, px: startX, py: startY,
-          vx: (tx - startX) / 0.55,
-          vy: (ty - startY) / 0.55,
-          life: 0.55,
-          color
+          vx: (tx - startX) / 0.56,
+          vy: (ty - startY) / 0.56,
+          life: 0.56,
+          palette,
+          style,
+          layer: zone.layer,
+          depthScale: zone.depthScale
         });
       }
 
-      function burstFirework(x, y, primaryHex) {
-        const theme = THEMES[currentThemeKey];
-        const secondaryHex = pick(theme.fwColors);
-        fwFlashes.push({ x, y, life: 1.0, radius: Math.min(state.width, state.height) * 0.085, color: primaryHex });
+      function burstFirework(r) {
+        const { x, y, palette, style, layer, depthScale } = r;
+        const baseScale = (Math.min(state.width, state.height) / 920) * depthScale;
+        const alphaScale = layer === 'back' ? (0.58 + 0.32 * Math.min(1, depthScale)) : 0.95;
 
-        // Primary chrysanthemum/willow streaks
-        const rays = 64;
-        const baseScale = Math.min(state.width, state.height) / 960;
-        for (let i = 0; i < rays; i++) {
-          const ang = (i / rays) * Math.PI * 2 + rand(-0.04, 0.04);
-          const spd = rand(120, 260) * baseScale * (0.65 + 0.45 * Math.random());
-          const col = i % 3 === 0 ? secondaryHex : primaryHex;
-          fwStreaks.push({
-            x, y,
-            trail: [{ x, y }],
-            vx: Math.cos(ang) * spd,
-            vy: Math.sin(ang) * spd - 20 * baseScale,
-            life: 1.0,
-            decay: rand(0.52, 0.82),
-            gravity: 135 * baseScale,
-            width: rand(1.4, 2.3),
-            color: col
-          });
-        }
-        // Inner secondary pistil ring
-        for (let i = 0; i < 24; i++) {
-          const ang = (i / 24) * Math.PI * 2;
-          const spd = rand(65, 110) * baseScale;
-          fwStreaks.push({
-            x, y,
-            trail: [{ x, y }],
-            vx: Math.cos(ang) * spd,
-            vy: Math.sin(ang) * spd - 12 * baseScale,
-            life: 0.9,
-            decay: rand(0.7, 0.95),
-            gravity: 95 * baseScale,
-            width: 1.3,
-            color: '#ffffff'
-          });
+        fwFlashes.push({
+          x, y,
+          life: 1.0,
+          radius: 95 * baseScale,
+          color: palette[0],
+          layer,
+          alphaScale
+        });
+
+        if (style === 'chrysanthemum') {
+          const rays = 76;
+          for (let i = 0; i < rays; i++) {
+            const ang = (i / rays) * Math.PI * 2 + rand(-0.04, 0.04);
+            const spd = rand(150, 310) * baseScale * (0.62 + 0.45 * Math.random());
+            fwStreaks.push({
+              x, y, trail: [{ x, y }],
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd - 20 * baseScale,
+              life: 1.0,
+              decay: rand(0.46, 0.72),
+              dragRate: 0.14,
+              gravity: 130 * baseScale,
+              width: rand(1.4, 2.3) * Math.max(0.7, depthScale),
+              maxTrail: 14,
+              color: palette[i % palette.length],
+              layer,
+              alphaScale,
+              canSplit: false,
+              twinkle: false
+            });
+          }
+        } else if (style === 'willow') {
+          // Long, slow-falling golden/silver weeping willow trails
+          const rays = 58;
+          for (let i = 0; i < rays; i++) {
+            const ang = (i / rays) * Math.PI * 2 + rand(-0.05, 0.05);
+            const spd = rand(110, 240) * baseScale * (0.55 + 0.5 * Math.random());
+            fwStreaks.push({
+              x, y, trail: [{ x, y }],
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd - 26 * baseScale,
+              life: 1.0,
+              decay: rand(0.28, 0.45),
+              dragRate: 0.22,
+              gravity: 165 * baseScale,
+              width: rand(1.5, 2.4) * Math.max(0.75, depthScale),
+              maxTrail: 24,
+              color: i % 4 === 0 ? palette[1 % palette.length] : '#ffd98a',
+              layer,
+              alphaScale,
+              canSplit: false,
+              twinkle: true
+            });
+          }
+        } else if (style === 'doubleRing') {
+          // Outer vibrant ring + contrasting inner ring
+          const outerCount = 52;
+          for (let i = 0; i < outerCount; i++) {
+            const ang = (i / outerCount) * Math.PI * 2;
+            const spd = rand(220, 255) * baseScale;
+            fwStreaks.push({
+              x, y, trail: [{ x, y }],
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd - 16 * baseScale,
+              life: 1.0,
+              decay: rand(0.48, 0.66),
+              dragRate: 0.14,
+              gravity: 115 * baseScale,
+              width: 2.0 * Math.max(0.75, depthScale),
+              maxTrail: 13,
+              color: palette[0],
+              layer,
+              alphaScale,
+              canSplit: false,
+              twinkle: false
+            });
+          }
+          const innerCount = 34;
+          for (let i = 0; i < innerCount; i++) {
+            const ang = (i / innerCount) * Math.PI * 2 + 0.08;
+            const spd = rand(105, 130) * baseScale;
+            fwStreaks.push({
+              x, y, trail: [{ x, y }],
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd - 12 * baseScale,
+              life: 1.0,
+              decay: rand(0.55, 0.78),
+              dragRate: 0.16,
+              gravity: 100 * baseScale,
+              width: 1.7 * Math.max(0.75, depthScale),
+              maxTrail: 10,
+              color: palette[1 % palette.length],
+              layer,
+              alphaScale,
+              canSplit: false,
+              twinkle: true
+            });
+          }
+        } else {
+          // Crossette / Glitter Pop (splits into crackling mini-stars!)
+          const arms = 28;
+          for (let i = 0; i < arms; i++) {
+            const ang = (i / arms) * Math.PI * 2 + rand(-0.08, 0.08);
+            const spd = rand(170, 260) * baseScale;
+            fwStreaks.push({
+              x, y, trail: [{ x, y }],
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd - 15 * baseScale,
+              life: 1.0,
+              decay: rand(0.58, 0.75),
+              dragRate: 0.18,
+              gravity: 110 * baseScale,
+              width: 2.1 * Math.max(0.75, depthScale),
+              maxTrail: 12,
+              color: palette[i % palette.length],
+              layer,
+              alphaScale,
+              canSplit: true,
+              splitDone: false,
+              baseScale,
+              palette,
+              twinkle: false
+            });
+          }
         }
       }
 
-      function updateAndDrawFireworks(dt) {
+      function updateFireworksPhysics(dt) {
         if (state.fireworksEnabled && state.introProgress > 0.72) {
           fwTimer -= dt;
           if (fwTimer <= 0) {
             launchFirework();
-            fwTimer = rand(2.2, 3.6);
+            if (Math.random() < 0.35) setTimeout(() => { if (!state.manualMode) launchFirework(); }, 280);
+            fwTimer = rand(1.6, 2.9);
           }
         }
 
-        ovCtx.save();
-        ovCtx.globalCompositeOperation = 'lighter';
-
-        // Rising rocket streaks
         for (let i = rockets.length - 1; i >= 0; i--) {
           const r = rockets[i];
           r.px = r.x; r.py = r.y;
           r.x += r.vx * dt;
           r.y += r.vy * dt;
           r.life -= dt;
-
-          const grad = ovCtx.createLinearGradient(r.px, r.py, r.x, r.y);
-          grad.addColorStop(0, 'rgba(255,255,255,0)');
-          grad.addColorStop(1, r.color);
-          ovCtx.strokeStyle = grad;
-          ovCtx.lineWidth = 2.0;
-          ovCtx.beginPath();
-          ovCtx.moveTo(r.px - (r.x - r.px) * 1.6, r.py - (r.y - r.py) * 1.6);
-          ovCtx.lineTo(r.x, r.y);
-          ovCtx.stroke();
-
           if (r.life <= 0) {
-            burstFirework(r.x, r.y, r.color);
+            burstFirework(r);
             rockets.splice(i, 1);
           }
         }
 
-        // Burst core bloom flash
-        for (let i = fwFlashes.length - 1; i >= 0; i--) {
-          const f = fwFlashes[i];
-          f.life -= dt * 2.8;
-          if (f.life <= 0) { fwFlashes.splice(i, 1); continue; }
-          const grad = ovCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius * (1.2 - f.life * 0.4));
-          grad.addColorStop(0, `rgba(255,255,255,${0.55 * f.life})`);
-          grad.addColorStop(0.35, hexToRgba(f.color, 0.28 * f.life));
-          grad.addColorStop(1, 'rgba(0,0,0,0)');
-          ovCtx.fillStyle = grad;
-          ovCtx.beginPath();
-          ovCtx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-          ovCtx.fill();
-        }
-
-        // Continuous tapering willow light streaks!
-        ovCtx.lineCap = 'round';
         for (let i = fwStreaks.length - 1; i >= 0; i--) {
           const s = fwStreaks[i];
           s.x += s.vx * dt;
           s.y += s.vy * dt;
-          const drag = Math.pow(0.14, dt);
+          const drag = Math.pow(s.dragRate, dt);
           s.vx *= drag;
           s.vy = s.vy * drag + s.gravity * dt;
           s.life -= s.decay * dt;
-          if (s.life <= 0) { fwStreaks.splice(i, 1); continue; }
 
-          s.trail.push({ x: s.x, y: s.y });
-          if (s.trail.length > 13) s.trail.shift();
-
-          if (s.trail.length >= 2) {
-            const p0 = s.trail[0];
-            const pN = s.trail[s.trail.length - 1];
-            const alpha = Math.pow(s.life, 0.75);
-            const grad = ovCtx.createLinearGradient(p0.x, p0.y, pN.x, pN.y);
-            grad.addColorStop(0, 'rgba(255,255,255,0)');
-            grad.addColorStop(0.35, hexToRgba(s.color, 0.65 * alpha));
-            grad.addColorStop(0.82, hexToRgba(s.color, 0.96 * alpha));
-            grad.addColorStop(1, `rgba(255,255,255,${alpha})`);
-
-            ovCtx.strokeStyle = grad;
-            ovCtx.lineWidth = s.width * (0.65 + 0.65 * s.life);
-            ovCtx.beginPath();
-            ovCtx.moveTo(p0.x, p0.y);
-            for (let k = 1; k < s.trail.length; k++) {
-              ovCtx.lineTo(s.trail[k].x, s.trail[k].y);
+          // Crossette secondary mini-burst!
+          if (s.canSplit && !s.splitDone && s.life < 0.62) {
+            s.splitDone = true;
+            for (let k = 0; k < 4; k++) {
+              const a = (k / 4) * Math.PI * 2 + rand(0, 0.8);
+              const sp = rand(55, 95) * s.baseScale;
+              fwStreaks.push({
+                x: s.x, y: s.y, trail: [{ x: s.x, y: s.y }],
+                vx: s.vx * 0.35 + Math.cos(a) * sp,
+                vy: s.vy * 0.35 + Math.sin(a) * sp,
+                life: 0.72,
+                decay: rand(0.75, 1.05),
+                dragRate: 0.15,
+                gravity: 115 * s.baseScale,
+                width: 1.3,
+                maxTrail: 8,
+                color: s.palette[(k + 1) % s.palette.length],
+                layer: s.layer,
+                alphaScale: s.alphaScale,
+                canSplit: false,
+                twinkle: true
+              });
             }
-            ovCtx.stroke();
-
-            // Crisp bright tip at head of each streak
-            ovCtx.fillStyle = `rgba(255,255,255,${0.9 * alpha})`;
-            ovCtx.beginPath();
-            ovCtx.arc(pN.x, pN.y, s.width * 0.72, 0, Math.PI * 2);
-            ovCtx.fill();
           }
+
+          if (s.life <= 0) { fwStreaks.splice(i, 1); continue; }
+          s.trail.push({ x: s.x, y: s.y });
+          if (s.trail.length > s.maxTrail) s.trail.shift();
         }
-        ovCtx.restore();
+
+        for (let i = fwFlashes.length - 1; i >= 0; i--) {
+          fwFlashes[i].life -= dt * 2.8;
+          if (fwFlashes[i].life <= 0) fwFlashes.splice(i, 1);
+        }
       }
 
-      // ==================== Crisp Precision Topper Jewel (Overlay) ====================
-      function drawPrecisionTopper(cx, cy, fov, camDist, sinX, cosX, topAngle) {
-        const sc = Math.max(state.scatter, Math.max(0, 1.0 - Math.max(0, (state.introProgress - 0.88) / 0.25)));
-        if (sc > 0.65) return;
+      function drawFireworkLayer(targetCtx, targetLayer) {
+        targetCtx.save();
+        targetCtx.globalCompositeOperation = 'lighter';
 
-        const theme = THEMES[currentThemeKey];
-        const yOff = topperMode === 'star' ? TREE_TOP_Y - 26 : TREE_TOP_Y - 30;
-        const ry = yOff * cosX;
-        const rz2 = yOff * sinX;
-        const zCam = rz2 + camDist;
-        if (zCam <= 40) return;
-        const scale = fov / zCam;
-        const sx = cx;
-        const sy = cy + ry * scale;
-        const alpha = (1 - sc / 0.65);
-        const pulse = 0.94 + 0.06 * Math.sin(state.time * 3.0);
-        const tiltCos = Math.cos(topAngle);
-
-        ovCtx.save();
-        ovCtx.translate(sx, sy);
-        ovCtx.scale(tiltCos, 1);
-        ovCtx.globalAlpha = alpha;
-
-        // Soft bloom behind jewel
-        ovCtx.globalCompositeOperation = 'lighter';
-        const glowR = (topperMode === 'star' ? 54 : 50) * scale * pulse;
-        const halo = ovCtx.createRadialGradient(0, 0, 2, 0, 0, glowR);
-        halo.addColorStop(0, hexToRgba(theme.topperCore, 0.45));
-        halo.addColorStop(0.35, hexToRgba(theme.topperColor, 0.22));
-        halo.addColorStop(1, 'rgba(0,0,0,0)');
-        ovCtx.fillStyle = halo;
-        ovCtx.beginPath();
-        ovCtx.arc(0, 0, glowR, 0, Math.PI * 2);
-        ovCtx.fill();
-
-        // Build crisp symmetrical geometry path
-        ovCtx.beginPath();
-        if (topperMode === 'star') {
-          const outerR = 30 * scale;
-          const innerR = 12.5 * scale;
-          for (let i = 0; i < 10; i++) {
-            const a = (i * Math.PI) / 5 - Math.PI / 2;
-            const r = i % 2 === 0 ? outerR : innerR;
-            const px = Math.cos(a) * r;
-            const py = Math.sin(a) * r;
-            if (i === 0) ovCtx.moveTo(px, py);
-            else ovCtx.lineTo(px, py);
-          }
-          ovCtx.closePath();
-        } else {
-          const steps = 120;
-          const hScale = 1.72 * scale;
-          for (let i = 0; i <= steps; i++) {
-            const t = (i / steps) * Math.PI * 2;
-            const hx = 16 * Math.pow(Math.sin(t), 3) * hScale;
-            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale;
-            if (i === 0) ovCtx.moveTo(hx, hy);
-            else ovCtx.lineTo(hx, hy);
-          }
-          ovCtx.closePath();
+        for (let i = 0; i < rockets.length; i++) {
+          const r = rockets[i];
+          if (r.layer !== targetLayer) continue;
+          const grad = targetCtx.createLinearGradient(r.px, r.py, r.x, r.y);
+          grad.addColorStop(0, 'rgba(255,255,255,0)');
+          grad.addColorStop(1, r.palette[0]);
+          targetCtx.strokeStyle = grad;
+          targetCtx.lineWidth = 2.0;
+          targetCtx.beginPath();
+          targetCtx.moveTo(r.px - (r.x - r.px) * 1.6, r.py - (r.y - r.py) * 1.6);
+          targetCtx.lineTo(r.x, r.y);
+          targetCtx.stroke();
         }
 
-        // Translucent luminous gem fill + crisp bright neon rim
-        const fillGrad = ovCtx.createRadialGradient(0, -4 * scale, 1, 0, 0, 30 * scale);
-        fillGrad.addColorStop(0, hexToRgba(theme.topperCore, 0.34));
-        fillGrad.addColorStop(0.7, hexToRgba(theme.topperColor, 0.14));
-        fillGrad.addColorStop(1, hexToRgba(theme.topperColor, 0.04));
-        ovCtx.fillStyle = fillGrad;
-        ovCtx.fill();
-
-        ovCtx.shadowColor = theme.topperColor;
-        ovCtx.shadowBlur = 16 * scale;
-        ovCtx.strokeStyle = theme.topperCore;
-        ovCtx.lineWidth = Math.max(1.5, 2.2 * scale);
-        ovCtx.lineJoin = 'round';
-        ovCtx.stroke();
-
-        // Faceted inner highlight lines on Star for 3D crystal jewel look
-        if (topperMode === 'star') {
-          ovCtx.shadowBlur = 0;
-          ovCtx.strokeStyle = hexToRgba('#ffffff', 0.38);
-          ovCtx.lineWidth = Math.max(0.8, 1.0 * scale);
-          const outerR = 30 * scale;
-          for (let i = 0; i < 5; i++) {
-            const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-            ovCtx.beginPath();
-            ovCtx.moveTo(0, 0);
-            ovCtx.lineTo(Math.cos(a) * outerR * 0.92, Math.sin(a) * outerR * 0.92);
-            ovCtx.stroke();
-          }
+        for (let i = 0; i < fwFlashes.length; i++) {
+          const f = fwFlashes[i];
+          if (f.layer !== targetLayer) continue;
+          const grad = targetCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius * (1.2 - f.life * 0.4));
+          grad.addColorStop(0, `rgba(255,255,255,${0.55 * f.life * f.alphaScale})`);
+          grad.addColorStop(0.35, hexToRgba(f.color, 0.30 * f.life * f.alphaScale));
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          targetCtx.fillStyle = grad;
+          targetCtx.beginPath();
+          targetCtx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+          targetCtx.fill();
         }
-        ovCtx.restore();
+
+        targetCtx.lineCap = 'round';
+        for (let i = 0; i < fwStreaks.length; i++) {
+          const s = fwStreaks[i];
+          if (s.layer !== targetLayer || s.trail.length < 2) continue;
+          const p0 = s.trail[0];
+          const pN = s.trail[s.trail.length - 1];
+          const tw = s.twinkle ? (0.5 + 0.5 * Math.sin(state.time * 22 + i)) : 1.0;
+          const alpha = Math.pow(s.life, 0.72) * s.alphaScale * tw;
+
+          const grad = targetCtx.createLinearGradient(p0.x, p0.y, pN.x, pN.y);
+          grad.addColorStop(0, 'rgba(255,255,255,0)');
+          grad.addColorStop(0.32, hexToRgba(s.color, 0.62 * alpha));
+          grad.addColorStop(0.84, hexToRgba(s.color, 0.96 * alpha));
+          grad.addColorStop(1, `rgba(255,255,255,${alpha})`);
+
+          targetCtx.strokeStyle = grad;
+          targetCtx.lineWidth = s.width * (0.65 + 0.65 * s.life);
+          targetCtx.beginPath();
+          targetCtx.moveTo(p0.x, p0.y);
+          for (let k = 1; k < s.trail.length; k++) {
+            targetCtx.lineTo(s.trail[k].x, s.trail[k].y);
+          }
+          targetCtx.stroke();
+
+          targetCtx.fillStyle = `rgba(255,255,255,${0.88 * alpha})`;
+          targetCtx.beginPath();
+          targetCtx.arc(pN.x, pN.y, s.width * 0.68, 0, Math.PI * 2);
+          targetCtx.fill();
+        }
+        targetCtx.restore();
       }
 
       // ==================== Polaroid Photo Frames & Click Bursts ====================
@@ -1465,7 +1566,7 @@
         state.introDone = false;
         state.rotY = -0.9;
         state.targetRotY = 0;
-        fwTimer = 1.9;
+        fwTimer = 1.8;
         rockets.length = 0;
         fwStreaks.length = 0;
         fwFlashes.length = 0;
@@ -1477,6 +1578,10 @@
         state.width = window.innerWidth;
         state.height = window.innerHeight;
         state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        fwBackCanvas.width = Math.floor(state.width * state.dpr);
+        fwBackCanvas.height = Math.floor(state.height * state.dpr);
+        fwBackCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
 
         glCanvas.width = Math.floor(state.width * state.dpr);
         glCanvas.height = Math.floor(state.height * state.dpr);
@@ -1509,17 +1614,16 @@
         const camDist = 665;
         const cx = w * 0.5;
         const cy = h * (isPortrait ? 0.43 : 0.39);
-        const topAngle = Math.sin(state.time * 1.1) * 0.25;
 
-        // Advance opening sequence
         if (!state.introDone) {
           state.introProgress += dt * 0.33;
           if (state.introProgress >= 0.76 && !greetingEl.classList.contains('visible')) {
             greetingEl.classList.add('visible');
           }
           if (state.introProgress >= 1.04 && state.fireworksEnabled && rockets.length === 0 && fwStreaks.length === 0) {
-            launchFirework(0.22, 0.24);
-            launchFirework(0.78, 0.26);
+            launchFirework(0.20, 0.23, 'chrysanthemum');
+            launchFirework(0.80, 0.25, 'willow');
+            launchFirework(0.34, 0.16, 'doubleRing');
           }
           if (state.introProgress >= 1.38) {
             state.introProgress = 1.38;
@@ -1527,7 +1631,12 @@
           }
         }
 
-        // 1. WebGL GPU Pass (16,500+ particles in single draw call)
+        // Update fireworks physics & draw background fireworks layer (behind tree!)
+        updateFireworksPhysics(dt);
+        fwBackCtx.clearRect(0, 0, w, h);
+        drawFireworkLayer(fwBackCtx, 'back');
+
+        // 1. WebGL GPU Pass (Tree + Rotating 3D Star/Heart Topper + Galaxy Disc)
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.enable(gl.BLEND);
@@ -1539,7 +1648,6 @@
         gl.uniform1f(loc.uScatter, state.scatter);
         gl.uniform1f(loc.uRotY, state.rotY);
         gl.uniform1f(loc.uRotX, state.rotX);
-        gl.uniform1f(loc.uTopRotY, topAngle);
         gl.uniform1f(loc.uFov, fov);
         gl.uniform1f(loc.uCamDist, camDist);
         gl.uniform2f(loc.uResolution, w, h);
@@ -1549,16 +1657,13 @@
         bindBufferAttribs(staticVbo);
         gl.drawArrays(gl.POINTS, 0, particleCount);
 
-        // 2. 2D Overlay Pass (Streak Fireworks + Precision Topper Jewel + Polaroids + Bursts)
+        // 2. Foreground Overlay (Foreground Wide Fireworks + Polaroids + Click Bursts)
         ovCtx.clearRect(0, 0, w, h);
-
-        updateAndDrawFireworks(dt);
-
-        const sinX = Math.sin(state.rotX), cosX = Math.cos(state.rotX);
-        drawPrecisionTopper(cx, cy, fov, camDist, sinX, cosX, topAngle);
+        drawFireworkLayer(ovCtx, 'front');
 
         if (photoFrames.length > 0 && state.introProgress > 0.7) {
           const sinY = Math.sin(state.rotY), cosY = Math.cos(state.rotY);
+          const sinX = Math.sin(state.rotX), cosX = Math.cos(state.rotX);
           const swirl = state.scatter * 2.2;
           const swSin = Math.sin(swirl), swCos = Math.cos(swirl);
           const fade = Math.min(1, (state.introProgress - 0.7) / 0.4);
@@ -1718,8 +1823,8 @@
               }
             }
           }
-          if (!hitPhoto && state.fireworksEnabled && e.clientY < state.height * 0.58 && Math.abs(e.clientX - state.width * 0.5) > state.width * 0.14) {
-            launchFirework(e.clientX / state.width, Math.max(0.12, e.clientY / state.height));
+          if (!hitPhoto && state.fireworksEnabled && e.clientY < state.height * 0.62) {
+            launchFirework(e.clientX / state.width, Math.max(0.10, e.clientY / state.height));
           }
         }
         activePointers.delete(e.pointerId);
@@ -2050,7 +2155,7 @@
         setScatter(on) { setScatter(on); },
         setIntro(v) { state.introProgress = v; state.introDone = v >= 1.38; if (v >= 0.76) greetingEl.classList.add('visible'); },
         replay() { startOpeningAnimation(); },
-        launchFirework(x, y) { launchFirework(x, y); },
+        launchFirework(x, y, style) { launchFirework(x, y, style); },
         setCamera(rotX, zoom) { state.targetRotX = rotX; state.targetZoom = zoom; },
         burst(x, y) { spawnBurst(x, y); }
       };
