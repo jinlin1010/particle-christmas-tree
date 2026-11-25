@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="Interactive 3D Particle Christmas Tree · Multi-theme WebGL/Canvas Experience" />
+  <title>Merry Christmas · 3D Particle Tree</title>
+  <style>
+    :root {
+      --accent: #ffd88a;
+      --panel-bg: rgba(12, 16, 28, 0.62);
+      --panel-border: rgba(255, 255, 255, 0.16);
+      --text-main: rgba(255, 255, 255, 0.94);
+      --text-sub: rgba(255, 255, 255, 0.68);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #04060e;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text-main);
+      user-select: none;
+    }
+
+    canvas#scene {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    canvas#scene:active {
+      cursor: grabbing;
+    }
+
+    /* Greeting Overlay */
+    .greeting-overlay {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 5.2%;
+      pointer-events: none;
+      text-align: center;
+      padding: 0 28px;
+      z-index: 5;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .greeting-eyebrow {
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: clamp(11px, 1.1vw, 14px);
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: rgba(255, 236, 196, 0.88);
+      text-shadow: 0 0 12px rgba(255, 214, 138, 0.5);
+      margin-bottom: 6px;
+    }
+
+    .greeting-title {
+      font-family: "Snell Roundhand", "Brush Script MT", "Georgia", "Times New Roman", serif;
+      font-style: italic;
+      font-size: clamp(32px, 4.4vw, 60px);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: #fff8eb;
+      text-shadow:
+        0 0 16px rgba(255, 214, 138, 0.78),
+        0 0 42px rgba(255, 190, 95, 0.42);
+      margin-bottom: 8px;
+      line-height: 1.15;
+    }
+
+    .greeting-sub {
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: clamp(14px, 1.4vw, 18px);
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 0.08em;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    .greeting-sign {
+      margin-top: 8px;
+      font-family: "Georgia", serif;
+      font-style: italic;
+      font-size: clamp(12px, 1.5vw, 15px);
+      letter-spacing: 0.14em;
+      color: rgba(255, 236, 200, 0.7);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+    }
+
+    /* Top Hint */
+    .top-hint {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(10, 14, 24, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      font-size: 12px;
+      color: var(--text-sub);
+      letter-spacing: 0.04em;
+      pointer-events: none;
+      z-index: 10;
+      white-space: nowrap;
+      transition: opacity 0.4s ease;
+    }
+
+    /* Quick Showcase Dock (compact pill bar for clean screen recording & quick switching) */
+    .showcase-dock {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 18;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    body.showcase-mode .showcase-dock {
+      display: flex;
+    }
+
+    body.showcase-mode .top-hint,
+    body.showcase-mode .controls-wrap {
+      display: none !important;
+    }
+
+    body.showcase-mode .greeting-overlay {
+      bottom: 11.5%;
+    }
+
+    .dock-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(10, 14, 26, 0.56);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .dock-chip {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.88);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .dock-chip.active {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.72);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.22);
+      transform: scale(1.04);
+    }
+
+    .dock-sep {
+      width: 1px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.18);
+      margin: 0 2px;
+    }
+
+    /* Controls */
+    .controls-wrap {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .toolbar-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill-btn {
+      appearance: none;
+      border: 1px solid var(--panel-border);
+      background: var(--panel-bg);
+      color: var(--text-main);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 999px;
+      padding: 8px 13px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.22s ease;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    .pill-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .pill-btn.active {
+      background: rgba(255, 216, 138, 0.22);
+      border-color: rgba(255, 216, 138, 0.65);
+      color: #ffe8b8;
+    }
+
+    .panel {
+      width: 292px;
+      max-height: calc(100vh - 82px);
+      overflow-y: auto;
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.48);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .panel::-webkit-scrollbar {
+      width: 4px;
+    }
+    .panel::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+    }
+
+    .panel.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px) scale(0.97);
+      position: absolute;
+      top: 46px;
+      right: 0;
+    }
+
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .theme-chip {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+    }
+
+    .theme-chip:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .theme-chip.active {
+      border-color: rgba(255, 255, 255, 0.58);
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .row-btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn {
+      flex: 1;
+      min-width: 72px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 7px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .mini-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .mini-btn.active {
+      background: rgba(255, 216, 138, 0.2);
+      border-color: rgba(255, 216, 138, 0.6);
+      color: #ffe8b8;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .text-input {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.28);
+      color: #fff;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      outline: none;
+      font-family: inherit;
+      resize: none;
+    }
+
+    .text-input:focus {
+      border-color: rgba(255, 216, 138, 0.55);
+    }
+
+    .gesture-box {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      z-index: 20;
+      width: 168px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(10, 14, 24, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(10px);
+      display: none;
+      flex-direction: column;
+    }
+
+    .gesture-box.show {
+      display: flex;
+    }
+
+    .gesture-video-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #000;
+    }
+
+    video#camVideo {
+      display: none;
+    }
+
+    canvas#camOverlay {
+      width: 100%;
+      height: 100%;
+      display: block;
+      transform: scaleX(-1);
+    }
+
+    .gesture-status {
+      padding: 6px 8px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.86);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Polaroid Focus Modal */
+    .photo-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 35;
+      background: rgba(4, 6, 14, 0.68);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+      padding: 24px;
+    }
+
+    .photo-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .polaroid-focus {
+      background: #fdfbf7;
+      padding: 14px 14px 36px;
+      border-radius: 6px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 38px rgba(255, 214, 138, 0.35);
+      max-width: min(86vw, 380px);
+      transform: scale(0.88) rotate(-1.5deg);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      text-align: center;
+    }
+
+    .photo-modal.show .polaroid-focus {
+      transform: scale(1) rotate(-1deg);
+    }
+
+    .polaroid-focus img {
+      display: block;
+      width: 100%;
+      max-height: 62vh;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+
+    .polaroid-caption {
+      margin-top: 12px;
+      color: #4a3b2c;
+      font-family: "Georgia", serif;
+      font-style: italic;
+      font-size: 14px;
+      letter-spacing: 0.06em;
+    }
+
+    /* Zen Mode */
+    body.zen-mode .top-hint,
+    body.zen-mode .panel,
+    body.zen-mode .showcase-dock {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    body.zen-mode .toolbar-btns .hide-in-zen {
+      display: none;
+    }
+
+    .toast {
+      position: fixed;
+      top: 58px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: rgba(16, 22, 38, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.28s ease;
+      z-index: 40;
+      max-width: 88vw;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 640px) {
+      .top-hint {
+        display: none;
+      }
+      .panel {
+        width: calc(100vw - 32px);
+        max-width: 310px;
+      }
+      .gesture-box {
+        width: 124px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div class="top-hint">Drag to rotate · Scroll to zoom · Double-click or Space to scatter · Press H for clean view</div>
+  <div id="toast" class="toast"></div>
+
+  <!-- Compact Showcase Dock (enabled via ?showcase=1 for clean Douyin recording) -->
+  <div class="showcase-dock" id="showcaseDock">
+    <div class="dock-row">
+      <button class="dock-chip active" data-dock-theme="gold"><span class="swatch" style="background:#ffd479;color:#ffd479"></span>Gold</button>
+      <button class="dock-chip" data-dock-theme="pink"><span class="swatch" style="background:#ff94c8;color:#ff94c8"></span>Rose</button>
+      <button class="dock-chip" data-dock-theme="cyber"><span class="swatch" style="background:#7ce8ff;color:#7ce8ff"></span>Cyber</button>
+      <button class="dock-chip" data-dock-theme="aurora"><span class="swatch" style="background:#6effb8;color:#6effb8"></span>Aurora</button>
+    </div>
+    <div class="dock-row">
+      <button class="dock-chip active" id="dockStar">⭐ Star</button>
+      <button class="dock-chip" id="dockHeart">💖 Heart</button>
+      <div class="dock-sep"></div>
+      <button class="dock-chip" id="dockScatter">✨ Nebula</button>
+    </div>
+  </div>
+
+  <!-- Greeting Overlay -->
+  <div class="greeting-overlay" id="greetingOverlay">
+    <div class="greeting-eyebrow" id="eyebrowDisplay">WINTER STARLIGHT EDITION</div>
+    <div class="greeting-title" id="titleDisplay">Merry Christmas</div>
+    <div class="greeting-sub" id="subDisplay">May all the starlight tonight fall gently beside you.</div>
+    <div class="greeting-sign" id="signDisplay">Wishing you warmth, wonder &amp; endless light</div>
+  </div>
+
+  <!-- Top-Right Controls -->
+  <div class="controls-wrap">
+    <div class="toolbar-btns">
+      <button class="pill-btn hide-in-zen" id="btnScatter" title="Scatter / Gather Particles">✨ Scatter</button>
+      <button class="pill-btn hide-in-zen" id="btnPhotos" title="Hang Polaroid Photos on Tree">📷 Photos</button>
+      <button class="pill-btn hide-in-zen" id="btnMusic" title="Play Christmas Music Box">🎵 Music</button>
+      <button class="pill-btn hide-in-zen" id="btnGesture" title="Hand Gesture Control">🖐️ Gesture</button>
+      <button class="pill-btn hide-in-zen" id="btnTogglePanel" title="Customize Theme & Text">🎨 Style</button>
+      <button class="pill-btn" id="btnZen" title="Hide UI for Clean Recording (H)">👁️</button>
+    </div>
+
+    <div class="panel hidden" id="controlPanel">
+      <div>
+        <div class="section-label">Color Theme</div>
+        <div class="theme-grid">
+          <button class="theme-chip active" data-theme="gold">
+            <span class="swatch" style="background:#ffd479;color:#ffd479"></span>Champagne Gold
+          </button>
+          <button class="theme-chip" data-theme="pink">
+            <span class="swatch" style="background:#ff94c8;color:#ff94c8"></span>Rose Pink
+          </button>
+          <button class="theme-chip" data-theme="cyber">
+            <span class="swatch" style="background:#7ce8ff;color:#7ce8ff"></span>Cyber Blue
+          </button>
+          <button class="theme-chip" data-theme="aurora">
+            <span class="swatch" style="background:#6effb8;color:#6effb8"></span>Aurora Night
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Tree Topper</div>
+        <div class="row-btns">
+          <button class="mini-btn active" id="btnTopStar">⭐ Star</button>
+          <button class="mini-btn" id="btnTopHeart">💖 Heart</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Greeting Preset</div>
+        <div class="row-btns">
+          <button class="mini-btn active" data-preset="classic">Classic</button>
+          <button class="mini-btn" data-preset="romantic">Romantic</button>
+          <button class="mini-btn" data-preset="minimal">Minimal</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Custom Text</div>
+        <div class="input-group">
+          <input class="text-input" id="inputEyebrow" value="WINTER STARLIGHT EDITION" placeholder="Top Eyebrow" />
+          <input class="text-input" id="inputTitle" value="Merry Christmas" placeholder="Main Title" />
+          <textarea class="text-input" id="inputSub" rows="2" placeholder="Greeting Message">May all the starlight tonight fall gently beside you.</textarea>
+          <input class="text-input" id="inputSign" value="Wishing you warmth, wonder &amp; endless light" placeholder="Subtitle / Signature" />
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Polaroid Photo Wall</div>
+        <div class="row-btns">
+          <button class="mini-btn" id="btnUploadPhotos">📷 Add Photos</button>
+          <button class="mini-btn" id="btnClearPhotos">Clear</button>
+        </div>
+      </div>
+
+      <div class="row-btns">
+        <button class="mini-btn" id="btnCopyLink">🔗 Copy Link</button>
+        <button class="mini-btn" id="btnResetView">🎯 Reset View</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="photoInput" accept="image/*" multiple hidden />
+
+  <div class="gesture-box" id="gestureBox">
+    <div class="gesture-video-wrap">
+      <video id="camVideo" playsinline></video>
+      <canvas id="camOverlay"></canvas>
+    </div>
+    <div class="gesture-status" id="gestureStatus">Initializing camera...</div>
+  </div>
+
+  <div class="photo-modal" id="photoModal">
+    <div class="polaroid-focus">
+      <img id="modalImg" src="" alt="Memory" />
+      <div class="polaroid-caption" id="modalCaption">Winter Memories ♥</div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById('scene');
+      const ctx = canvas.getContext('2d', { alpha: false });
+
+      // ==================== Themes ====================
+      const THEMES = {
+        gold: {
+          name: 'Champagne Gold',
+          bgTop: '#05060b',
+          bgMid: '#0e0a12',
+          bgBot: '#1b110c',
+          titleColor: '#fff7e6',
+          titleGlow: 'rgba(255, 210, 122, 0.82)',
+          treeColors: ['#fff8e7', '#ffe29a', '#ffc663', '#ffae42', '#d4873b'],
+          ribbonColors: ['#ffffff', '#ffe9b3', '#ffd16e'],
+          ribbonLine: 'rgba(255, 224, 150, 0.24)',
+          ornamentColors: ['#fff4d2', '#ffcf66', '#ff8c5a', '#ffffff'],
+          ringColors: ['#ffe4a3', '#ffb95c', '#ffffff'],
+          topperGlow: '#ffbe4f',
+          accent: '#ffd88a'
+        },
+        pink: {
+          name: 'Rose Pink',
+          bgTop: '#090412',
+          bgMid: '#180921',
+          bgBot: '#240b22',
+          titleColor: '#fff0f7',
+          titleGlow: 'rgba(255, 138, 200, 0.85)',
+          treeColors: ['#fff3f8', '#ffc2e2', '#ff88c6', '#e06eff', '#b37aff'],
+          ribbonColors: ['#ffffff', '#ffd4eb', '#ff94cf'],
+          ribbonLine: 'rgba(255, 165, 218, 0.24)',
+          ornamentColors: ['#fff0f6', '#ffb3da', '#ffe1a8', '#d79eff'],
+          ringColors: ['#ffb8de', '#d88cff', '#ffffff'],
+          topperGlow: '#ff7ec6',
+          accent: '#ff94c8'
+        },
+        cyber: {
+          name: 'Cyber Blue',
+          bgTop: '#020612',
+          bgMid: '#061228',
+          bgBot: '#091b34',
+          titleColor: '#eefaff',
+          titleGlow: 'rgba(118, 224, 255, 0.84)',
+          treeColors: ['#ffffff', '#c8f5ff', '#7ce6ff', '#48b8ff', '#8ea8ff'],
+          ribbonColors: ['#ffffff', '#b8f3ff', '#62d9ff'],
+          ribbonLine: 'rgba(128, 232, 255, 0.24)',
+          ornamentColors: ['#ffe694', '#7ce8ff', '#ffffff', '#ffd06b'],
+          ringColors: ['#a6eeff', '#5cc5ff', '#ffffff'],
+          topperGlow: '#6be3ff',
+          accent: '#7ce8ff'
+        },
+        aurora: {
+          name: 'Aurora Night',
+          bgTop: '#030714',
+          bgMid: '#071628',
+          bgBot: '#091d24',
+          titleColor: '#effff8',
+          titleGlow: 'rgba(110, 255, 184, 0.8)',
+          treeColors: ['#f2fff8', '#9effd3', '#52f2b8', '#46c8ff', '#9c88ff'],
+          ribbonColors: ['#ffffff', '#b6ffe0', '#6ef5ff'],
+          ribbonLine: 'rgba(120, 255, 200, 0.22)',
+          ornamentColors: ['#ffe58f', '#ff7aa8', '#80ffce', '#ffffff'],
+          ringColors: ['#82ffd0', '#66c9ff', '#ffffff'],
+          topperGlow: '#ff8cc8',
+          accent: '#6effb8'
+        }
+      };
+
+      const DEDICATION_PRESETS = {
+        classic: {
+          eyebrow: 'WINTER STARLIGHT EDITION',
+          title: 'Merry Christmas',
+          sub: 'May all the starlight tonight fall gently beside you.',
+          sign: 'Wishing you warmth, wonder & endless light'
+        },
+        romantic: {
+          eyebrow: 'ALL I WANT FOR CHRISTMAS',
+          title: 'Merry Christmas',
+          sub: 'You are the brightest star in my winter sky.',
+          sign: 'Forever & Always'
+        },
+        minimal: {
+          eyebrow: 'SEASON OF WONDER',
+          title: 'Merry Christmas',
+          sub: 'Peace · Joy · Starlight',
+          sign: ''
+        }
+      };
+
+      // ==================== URL Params ====================
+      const params = new URLSearchParams(location.search);
+      let currentThemeKey = THEMES[params.get('theme')] ? params.get('theme') : 'gold';
+      let topperMode = params.get('top') === 'heart' ? 'heart' : 'star';
+      const isShowcaseMode = params.get('showcase') === '1';
+      if (isShowcaseMode) {
+        document.body.classList.add('showcase-mode');
+      }
+
+      const state = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        dpr: Math.min(window.devicePixelRatio || 1, 2),
+        rotY: 0,
+        targetRotY: 0,
+        rotX: 0.13,
+        targetRotX: 0.13,
+        zoom: 1,
+        targetZoom: 1,
+        autoRotateSpeed: 0.0085,
+        isDragging: false,
+        dragMoved: 0,
+        lastX: 0,
+        lastY: 0,
+        scatter: 0,
+        targetScatter: 0,
+        time: 0,
+        gestureActive: false,
+        handRotBias: 0,
+        pinchCooldown: 0,
+        manualMode: false
+      };
+
+      // ==================== Glow Sprites ====================
+      const spriteCache = new Map();
+      function getGlowSprite(color, soft = false) {
+        const key = color + (soft ? '_s' : '');
+        if (spriteCache.has(key)) return spriteCache.get(key);
+        const size = 64;
+        const c = document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        const gctx = c.getContext('2d');
+        const half = size / 2;
+        const grad = gctx.createRadialGradient(half, half, 0, half, half, half);
+        if (soft) {
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.22, color);
+          grad.addColorStop(0.55, hexToRgba(color, 0.25));
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+        } else {
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.18, '#ffffff');
+          grad.addColorStop(0.38, color);
+          grad.addColorStop(0.75, hexToRgba(color, 0.18));
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+        }
+        gctx.fillStyle = grad;
+        gctx.fillRect(0, 0, size, size);
+        spriteCache.set(key, c);
+        return c;
+      }
+
+      function hexToRgba(hex, alpha) {
+        const clean = hex.replace('#', '');
+        const num = parseInt(clean, 16);
+        const r = (num >> 16) & 255;
+        const g = (num >> 8) & 255;
+        const b = num & 255;
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+
+      // Deterministic PRNG option for ultra-clean consistency
+      function rand(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function randomSpherePoint(minR, maxR) {
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2 * Math.PI;
+        const phi = Math.acos(2 * v - 1);
+        const r = rand(minR, maxR);
+        return {
+          x: r * Math.sin(phi) * Math.cos(theta),
+          y: r * Math.cos(phi) * 0.82,
+          z: r * Math.sin(phi) * Math.sin(theta)
+        };
+      }
+
+      // ==================== Particles ====================
+      let bgStars = [];
+      let treeParticles = [];
+      let ribbonCurves = [[], []];
+      let ringParticles = [];
+      let snowParticles = [];
+      let emberParticles = [];
+      let topperParticles = [];
+      let photoFrames = [];
+      let bursts = [];
+
+      const TREE_HEIGHT = 430;
+      const TREE_BASE_Y = 200;
+      const TREE_TOP_Y = TREE_BASE_Y - TREE_HEIGHT;
+      const TREE_RADIUS = 166;
+
+      function buildParticles() {
+        const theme = THEMES[currentThemeKey];
+        spriteCache.clear();
+
+        bgStars = [];
+        for (let i = 0; i < 240; i++) {
+          bgStars.push({
+            x: Math.random(),
+            y: Math.random(),
+            size: rand(0.8, 2.2),
+            phase: rand(0, Math.PI * 2),
+            speed: rand(0.8, 2.6),
+            alpha: rand(0.2, 0.88)
+          });
+        }
+
+        treeParticles = [];
+        const foliageCount = 2600;
+        for (let i = 0; i < foliageCount; i++) {
+          const hNorm = Math.pow(Math.random(), 0.78);
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const layerWave = 1 + 0.14 * Math.sin(hNorm * Math.PI * 10);
+          const maxR = hNorm * TREE_RADIUS * layerWave;
+          const radialBias = Math.pow(Math.random(), 0.42);
+          const r = maxR * radialBias;
+          const angle = Math.random() * Math.PI * 2;
+          const tx = Math.cos(angle) * r;
+          const tz = Math.sin(angle) * r;
+          const scatterPos = randomSpherePoint(180, 490);
+
+          treeParticles.push({
+            tx, ty: y, tz,
+            sx: scatterPos.x, sy: scatterPos.y, sz: scatterPos.z,
+            size: rand(2.2, 5.4) * (0.75 + 0.42 * radialBias),
+            baseAlpha: rand(0.35, 0.92),
+            phase: rand(0, Math.PI * 2),
+            twinkleSpeed: rand(1.4, 4.2),
+            colorIdx: Math.floor(Math.random() * theme.treeColors.length),
+            kind: 'tree'
+          });
+        }
+
+        const ribbonCount = 1050;
+        const turns = 6.4;
+        for (let i = 0; i < ribbonCount; i++) {
+          const strand = i % 2;
+          const t = i / ribbonCount;
+          const jitterT = Math.min(1, Math.max(0, t + rand(-0.014, 0.014)));
+          const y = TREE_TOP_Y + jitterT * TREE_HEIGHT;
+          const r = jitterT * TREE_RADIUS * 1.035 + rand(-6, 7);
+          const angle = jitterT * turns * Math.PI * 2 + strand * Math.PI + rand(-0.16, 0.16);
+          const tx = Math.cos(angle) * r;
+          const tz = Math.sin(angle) * r;
+          const scatterPos = randomSpherePoint(200, 520);
+
+          treeParticles.push({
+            tx, ty: y, tz,
+            sx: scatterPos.x, sy: scatterPos.y, sz: scatterPos.z,
+            size: rand(3.4, 7.4),
+            baseAlpha: rand(0.65, 1.0),
+            phase: rand(0, Math.PI * 2),
+            twinkleSpeed: rand(2.0, 5.2),
+            colorIdx: Math.floor(Math.random() * theme.ribbonColors.length),
+            kind: 'ribbon'
+          });
+        }
+
+        ribbonCurves = [[], []];
+        const curveSteps = 180;
+        for (let strand = 0; strand < 2; strand++) {
+          for (let i = 0; i <= curveSteps; i++) {
+            const t = i / curveSteps;
+            const y = TREE_TOP_Y + t * TREE_HEIGHT;
+            const r = t * TREE_RADIUS * 1.04;
+            const angle = t * turns * Math.PI * 2 + strand * Math.PI;
+            ribbonCurves[strand].push({
+              x: Math.cos(angle) * r,
+              y,
+              z: Math.sin(angle) * r
+            });
+          }
+        }
+
+        const ornamentCount = 52;
+        for (let i = 0; i < ornamentCount; i++) {
+          const hNorm = rand(0.15, 0.96);
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const r = hNorm * TREE_RADIUS * rand(0.92, 1.04);
+          const angle = i * 2.39996 + rand(-0.2, 0.2);
+          const tx = Math.cos(angle) * r;
+          const tz = Math.sin(angle) * r;
+          const scatterPos = randomSpherePoint(160, 440);
+
+          treeParticles.push({
+            tx, ty: y, tz,
+            sx: scatterPos.x, sy: scatterPos.y, sz: scatterPos.z,
+            size: rand(12, 21),
+            baseAlpha: 0.96,
+            phase: rand(0, Math.PI * 2),
+            twinkleSpeed: rand(1.2, 2.8),
+            colorIdx: i % theme.ornamentColors.length,
+            kind: 'ornament'
+          });
+        }
+
+        buildTopperParticles();
+
+        ringParticles = [];
+        const rings = [
+          { rMin: 185, rMax: 235, count: 520, speed: 0.25 },
+          { rMin: 255, rMax: 315, count: 480, speed: -0.18 },
+          { rMin: 335, rMax: 410, count: 380, speed: 0.12 }
+        ];
+        rings.forEach((ring, rIdx) => {
+          for (let i = 0; i < ring.count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = rand(ring.rMin, ring.rMax);
+            const yOffset = rand(-4, 6) + Math.sin(angle * 3 + rIdx) * 3;
+            ringParticles.push({
+              angle,
+              radius,
+              y: TREE_BASE_Y + 18 + yOffset,
+              speed: ring.speed,
+              size: rand(2.2, 5.2),
+              alpha: rand(0.28, 0.88),
+              phase: rand(0, Math.PI * 2),
+              colorIdx: Math.floor(Math.random() * theme.ringColors.length)
+            });
+          }
+        });
+
+        snowParticles = [];
+        for (let i = 0; i < 200; i++) {
+          snowParticles.push({
+            x: rand(-520, 520),
+            y: rand(-420, 320),
+            z: rand(-420, 420),
+            vy: rand(24, 58),
+            vx: rand(-10, 10),
+            swayPhase: rand(0, Math.PI * 2),
+            size: rand(2.6, 6.2),
+            alpha: rand(0.28, 0.78)
+          });
+        }
+
+        emberParticles = [];
+        for (let i = 0; i < 65; i++) {
+          const r = rand(40, 240);
+          const ang = Math.random() * Math.PI * 2;
+          emberParticles.push({
+            x: Math.cos(ang) * r,
+            y: rand(-220, 240),
+            z: Math.sin(ang) * r,
+            vy: rand(18, 42),
+            phase: rand(0, Math.PI * 2),
+            size: rand(3.5, 7.5),
+            alpha: rand(0.35, 0.85)
+          });
+        }
+      }
+
+      function buildTopperParticles() {
+        topperParticles = [];
+        const count = 210;
+        if (topperMode === 'star') {
+          for (let i = 0; i < count; i++) {
+            const outerR = 28;
+            const innerR = 12;
+            const edge = Math.floor(Math.random() * 10);
+            const t = Math.random();
+            const a1 = (edge * Math.PI) / 5 - Math.PI / 2;
+            const a2 = ((edge + 1) * Math.PI) / 5 - Math.PI / 2;
+            const r1 = edge % 2 === 0 ? outerR : innerR;
+            const r2 = (edge + 1) % 2 === 0 ? outerR : innerR;
+            const fill = i < 75 ? rand(0.15, 0.85) : 1;
+            const px = (Math.cos(a1) * r1 * (1 - t) + Math.cos(a2) * r2 * t) * fill;
+            const py = (Math.sin(a1) * r1 * (1 - t) + Math.sin(a2) * r2 * t) * fill;
+            const sp = randomSpherePoint(120, 320);
+            topperParticles.push({
+              tx: px,
+              ty: TREE_TOP_Y - 19 + py,
+              tz: rand(-5, 5),
+              sx: sp.x, sy: sp.y - 160, sz: sp.z,
+              size: rand(3.2, 6.4),
+              phase: rand(0, Math.PI * 2)
+            });
+          }
+        } else {
+          for (let i = 0; i < count; i++) {
+            const t = Math.random() * Math.PI * 2;
+            const fill = i < 40 ? rand(0.25, 0.72) : rand(0.94, 1.03);
+            const hx = 16 * Math.pow(Math.sin(t), 3);
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            const scale = 1.75 * fill;
+            const sp = randomSpherePoint(120, 320);
+            topperParticles.push({
+              tx: hx * scale,
+              ty: TREE_TOP_Y - 26 + hy * scale,
+              tz: rand(-4, 4),
+              sx: sp.x, sy: sp.y - 160, sz: sp.z,
+              size: i < 40 ? rand(2.2, 4.0) : rand(2.8, 5.0),
+              phase: rand(0, Math.PI * 2)
+            });
+          }
+        }
+      }
+
+      // ==================== Polaroid Photo Frames ====================
+      function layoutPhotoFrames(files) {
+        const list = Array.from(files).slice(0, 18);
+        if (!list.length) return;
+        photoFrames = [];
+        list.forEach((file, idx) => {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.src = url;
+          const total = list.length;
+          const hNorm = 0.24 + (idx / Math.max(1, total - 1)) * 0.64;
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const r = hNorm * TREE_RADIUS * 1.12 + 12;
+          const angle = idx * 2.39996;
+          const sp = randomSpherePoint(190, 360);
+          photoFrames.push({
+            img,
+            url,
+            tx: Math.cos(angle) * r,
+            ty: y,
+            tz: Math.sin(angle) * r,
+            sx: sp.x,
+            sy: sp.y,
+            sz: sp.z,
+            tilt: rand(-0.14, 0.14),
+            screenRect: null
+          });
+        });
+        document.getElementById('btnPhotos').classList.add('active');
+        showToast(`Hung ${list.length} Polaroid photos on the tree! Tap any photo to zoom.`, 3400);
+      }
+
+      const photoModal = document.getElementById('photoModal');
+      const modalImg = document.getElementById('modalImg');
+      const modalCaption = document.getElementById('modalCaption');
+
+      function openPhotoModal(frame) {
+        if (!frame || !frame.url) return;
+        modalImg.src = frame.url;
+        modalCaption.textContent = 'Winter Memories ♥';
+        photoModal.classList.add('show');
+      }
+
+      photoModal.addEventListener('click', () => photoModal.classList.remove('show'));
+
+      function spawnBurst(screenX, screenY) {
+        const theme = THEMES[currentThemeKey];
+        for (let i = 0; i < 28; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const spd = rand(40, 170);
+          bursts.push({
+            x: screenX,
+            y: screenY,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            life: 1,
+            decay: rand(0.9, 1.7),
+            size: rand(6, 14),
+            color: pick(theme.ribbonColors)
+          });
+        }
+      }
+
+      // ==================== 3D Projection ====================
+      function projectPoint(x, y, z, sinY, cosY, sinX, cosX, fov, dist, cx, cy) {
+        const rx = x * cosY - z * sinY;
+        const rz = x * sinY + z * cosY;
+        const ry = y * cosX - rz * sinX;
+        const rz2 = y * sinX + rz * cosX;
+
+        const zCam = rz2 + dist;
+        if (zCam <= 40) return null;
+        const scale = fov / zCam;
+        return {
+          sx: cx + rx * scale,
+          sy: cy + ry * scale,
+          scale,
+          depth: zCam
+        };
+      }
+
+      // ==================== Render Step ====================
+      function resize() {
+        state.width = window.innerWidth;
+        state.height = window.innerHeight;
+        state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(state.width * state.dpr);
+        canvas.height = Math.floor(state.height * state.dpr);
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      }
+
+      function renderStep(dt) {
+        state.time += dt;
+        if (state.pinchCooldown > 0) state.pinchCooldown -= dt;
+
+        const theme = THEMES[currentThemeKey];
+        const w = state.width;
+        const h = state.height;
+
+        if (!state.isDragging) {
+          state.targetRotY += (state.autoRotateSpeed * (dt * 60)) + state.handRotBias * dt * 2.2;
+        }
+        state.rotY += (state.targetRotY - state.rotY) * Math.min(1, dt * 6);
+        state.rotX += (state.targetRotX - state.rotX) * Math.min(1, dt * 6);
+        state.zoom += (state.targetZoom - state.zoom) * Math.min(1, dt * 7);
+        state.scatter += (state.targetScatter - state.scatter) * Math.min(1, dt * 3.8);
+
+        // 1. Night Sky Gradient
+        ctx.globalCompositeOperation = 'source-over';
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+        bgGrad.addColorStop(0, theme.bgTop);
+        bgGrad.addColorStop(0.55, theme.bgMid);
+        bgGrad.addColorStop(1, theme.bgBot);
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        const isPortrait = w < h;
+        const cx = w * 0.5;
+        const cy = h * (isPortrait ? 0.46 : 0.465);
+        const haloRadius = Math.min(w, h) * 0.48;
+        const halo = ctx.createRadialGradient(cx, cy, 10, cx, cy, haloRadius);
+        halo.addColorStop(0, hexToRgba(theme.accent, 0.14));
+        halo.addColorStop(0.5, hexToRgba(theme.accent, 0.035));
+        halo.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = halo;
+        ctx.fillRect(0, 0, w, h);
+
+        // 2. Background Stars
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < bgStars.length; i++) {
+          const s = bgStars[i];
+          const tw = 0.5 + 0.5 * Math.sin(state.time * s.speed + s.phase);
+          ctx.globalAlpha = s.alpha * (0.4 + 0.6 * tw);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(s.x * w, s.y * h, s.size, s.size);
+        }
+
+        const minDim = Math.min(w, h);
+        const fov = (isPortrait ? w * 0.78 : minDim * 0.81) * state.zoom;
+        const camDist = 665;
+        const sinY = Math.sin(state.rotY);
+        const cosY = Math.cos(state.rotY);
+        const sinX = Math.sin(state.rotX);
+        const cosX = Math.cos(state.rotX);
+
+        // 3. Base Galaxy Rings
+        const ringAlphaFactor = 1 - state.scatter * 0.65;
+        for (let i = 0; i < ringParticles.length; i++) {
+          const rp = ringParticles[i];
+          rp.angle += rp.speed * dt;
+          const waveY = rp.y + Math.sin(state.time * 1.8 + rp.phase) * 3;
+          const x = Math.cos(rp.angle) * rp.radius * (1 + state.scatter * 0.5);
+          const z = Math.sin(rp.angle) * rp.radius * (1 + state.scatter * 0.5);
+          const p = projectPoint(x, waveY, z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
+          if (!p) continue;
+          const twinkle = 0.6 + 0.4 * Math.sin(state.time * 2.5 + rp.phase);
+          const sz = rp.size * p.scale * 2.4;
+          if (sz < 0.5) continue;
+          const sprite = getGlowSprite(theme.ringColors[rp.colorIdx], true);
+          ctx.globalAlpha = Math.min(1, rp.alpha * twinkle * ringAlphaFactor);
+          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
+        }
+
+        // 3.5 Continuous Luminous Spiral Ribbon
+        const sc = state.scatter;
+        if (sc < 0.45) {
+          ctx.save();
+          ctx.globalAlpha = (1 - sc / 0.45) * 0.85;
+          ctx.strokeStyle = theme.ribbonLine;
+          ctx.lineWidth = 2.6 * state.zoom;
+          for (let sIdx = 0; sIdx < ribbonCurves.length; sIdx++) {
+            const curve = ribbonCurves[sIdx];
+            ctx.beginPath();
+            let started = false;
+            for (let i = 0; i < curve.length; i++) {
+              const pt = curve[i];
+              const p = projectPoint(pt.x, pt.y, pt.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
+              if (!p) { started = false; continue; }
+              if (!started) { ctx.moveTo(p.sx, p.sy); started = true; }
+              else ctx.lineTo(p.sx, p.sy);
+            }
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        // 4. Main Tree Particles
+        const swirl = sc * 1.65;
+        const swSin = Math.sin(swirl);
+        const swCos = Math.cos(swirl);
+
+        for (let i = 0; i < treeParticles.length; i++) {
+          const tp = treeParticles[i];
+          let px = tp.tx + (tp.sx - tp.tx) * sc;
+          let py = tp.ty + (tp.sy - tp.ty) * sc;
+          let pz = tp.tz + (tp.sz - tp.tz) * sc;
+
+          if (sc > 0.01) {
+            const nx = px * swCos - pz * swSin;
+            const nz = px * swSin + pz * swCos;
+            px = nx;
+            pz = nz;
+          }
+
+          const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
+          if (!p) continue;
+
+          const twinkle = 0.62 + 0.38 * Math.sin(state.time * tp.twinkleSpeed + tp.phase);
+          let color;
+          if (tp.kind === 'tree') color = theme.treeColors[tp.colorIdx];
+          else if (tp.kind === 'ribbon') color = theme.ribbonColors[tp.colorIdx];
+          else color = theme.ornamentColors[tp.colorIdx];
+
+          const sz = tp.size * p.scale * (tp.kind === 'ornament' ? 2.1 : 2.5);
+          if (sz < 0.6) continue;
+
+          const sprite = getGlowSprite(color, tp.kind !== 'ornament');
+          ctx.globalAlpha = Math.min(1, tp.baseAlpha * twinkle);
+          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
+        }
+
+        // 4.5 Polaroid Photo Frames
+        if (photoFrames.length > 0) {
+          ctx.globalCompositeOperation = 'source-over';
+          const projectedFrames = [];
+          for (let i = 0; i < photoFrames.length; i++) {
+            const pf = photoFrames[i];
+            if (!pf.img.complete || pf.img.naturalWidth === 0) {
+              pf.screenRect = null;
+              continue;
+            }
+            let px = pf.tx + (pf.sx - pf.tx) * sc;
+            let py = pf.ty + (pf.sy - pf.ty) * sc;
+            let pz = pf.tz + (pf.sz - pf.tz) * sc;
+            if (sc > 0.01) {
+              const nx = px * swCos - pz * swSin;
+              const nz = px * swSin + pz * swCos;
+              px = nx;
+              pz = nz;
+            }
+            const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
+            if (!p) { pf.screenRect = null; continue; }
+            projectedFrames.push({ pf, p });
+          }
+
+          projectedFrames.sort((a, b) => b.p.depth - a.p.depth);
+          for (let i = 0; i < projectedFrames.length; i++) {
+            const { pf, p } = projectedFrames[i];
+            const cardW = (34 + sc * 18) * p.scale;
+            const cardH = cardW * 1.2;
+            const pad = cardW * 0.09;
+            pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
+
+            ctx.save();
+            ctx.translate(p.sx, p.sy);
+            ctx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.04);
+            ctx.globalAlpha = 0.96;
+            ctx.shadowColor = hexToRgba(theme.accent, 0.55);
+            ctx.shadowBlur = 12 * p.scale;
+            ctx.fillStyle = '#fcfaf5';
+            ctx.fillRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
+            ctx.shadowBlur = 0;
+
+            const imgW = cardW - pad * 2;
+            const imgH = cardH - pad * 3.1;
+            ctx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
+            ctx.restore();
+          }
+          ctx.globalCompositeOperation = 'lighter';
+        }
+
+        // 5. Tree Topper (gentle swaying facing viewer when assembled so Star & Heart always read cleanly)
+        const topAngle = Math.sin(state.time * 1.1) * 0.28 * (1 - sc) + state.rotY * sc;
+        const topSinY = Math.sin(topAngle);
+        const topCosY = Math.cos(topAngle);
+
+        for (let i = 0; i < topperParticles.length; i++) {
+          const tp = topperParticles[i];
+          const px = tp.tx + (tp.sx - tp.tx) * sc;
+          const py = tp.ty + (tp.sy - tp.ty) * sc;
+          const pz = tp.tz + (tp.sz - tp.tz) * sc;
+          const p = projectPoint(px, py, pz, topSinY, topCosY, sinX, cosX, fov, camDist, cx, cy);
+          if (!p) continue;
+          const tw = 0.76 + 0.24 * Math.sin(state.time * 4 + tp.phase);
+          const sz = tp.size * p.scale * 2.05;
+          const sprite = getGlowSprite(theme.topperGlow, true);
+          ctx.globalAlpha = tw * (topperMode === 'heart' ? 0.88 : 0.95);
+          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
+        }
+
+        if (sc < 0.7) {
+          const topCenter = projectPoint(0, TREE_TOP_Y - 24, 0, topSinY, topCosY, sinX, cosX, fov, camDist, cx, cy);
+          if (topCenter) {
+            const pulse = 0.88 + 0.14 * Math.sin(state.time * 3.2);
+            const flareSize = (topperMode === 'heart' ? 72 : 86) * topCenter.scale * pulse * (1 - sc);
+            const coreSprite = getGlowSprite(theme.topperGlow, true);
+            ctx.globalAlpha = (topperMode === 'heart' ? 0.42 : 0.78) * (1 - sc);
+            ctx.drawImage(coreSprite, topCenter.sx - flareSize * 0.5, topCenter.sy - flareSize * 0.5, flareSize, flareSize);
+
+            if (topperMode === 'star') {
+              ctx.save();
+              ctx.translate(topCenter.sx, topCenter.sy);
+              ctx.globalAlpha = 0.52 * (1 - sc) * pulse;
+              const rayLen = 46 * topCenter.scale * pulse;
+              const rayGradH = ctx.createLinearGradient(-rayLen, 0, rayLen, 0);
+              rayGradH.addColorStop(0, 'rgba(255,255,255,0)');
+              rayGradH.addColorStop(0.5, '#ffffff');
+              rayGradH.addColorStop(1, 'rgba(255,255,255,0)');
+              ctx.fillStyle = rayGradH;
+              ctx.fillRect(-rayLen, -1.2, rayLen * 2, 2.4);
+
+              const rayGradV = ctx.createLinearGradient(0, -rayLen, 0, rayLen);
+              rayGradV.addColorStop(0, 'rgba(255,255,255,0)');
+              rayGradV.addColorStop(0.5, '#ffffff');
+              rayGradV.addColorStop(1, 'rgba(255,255,255,0)');
+              ctx.fillStyle = rayGradV;
+              ctx.fillRect(-1.2, -rayLen, 2.4, rayLen * 2);
+              ctx.restore();
+            }
+          }
+        }
+
+        // 6. Rising Stardust
+        const emberSprite = getGlowSprite(theme.accent, true);
+        for (let i = 0; i < emberParticles.length; i++) {
+          const ep = emberParticles[i];
+          ep.y -= ep.vy * dt;
+          ep.x += Math.sin(state.time * 1.6 + ep.phase) * 10 * dt;
+          if (ep.y < -280) ep.y = 240;
+          const p = projectPoint(ep.x, ep.y, ep.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
+          if (!p) continue;
+          const sz = ep.size * p.scale * 2.1;
+          ctx.globalAlpha = ep.alpha * (0.5 + 0.5 * Math.sin(state.time * 3 + ep.phase));
+          ctx.drawImage(emberSprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
+        }
+
+        // 7. Falling Snow
+        const snowSprite = getGlowSprite('#d8eeff', true);
+        for (let i = 0; i < snowParticles.length; i++) {
+          const sp = snowParticles[i];
+          sp.y += sp.vy * dt;
+          sp.x += (sp.vx + Math.sin(state.time * 1.2 + sp.swayPhase) * 14) * dt;
+          if (sp.y > 330) {
+            sp.y = -420;
+            sp.x = rand(-520, 520);
+            sp.z = rand(-420, 420);
+          }
+          const p = projectPoint(sp.x, sp.y, sp.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
+          if (!p) continue;
+          const sz = sp.size * p.scale * 2.2;
+          if (sz < 0.6) continue;
+          ctx.globalAlpha = sp.alpha;
+          ctx.drawImage(snowSprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
+        }
+
+        // 8. Click Sparkle Bursts
+        for (let i = bursts.length - 1; i >= 0; i--) {
+          const b = bursts[i];
+          b.life -= b.decay * dt;
+          if (b.life <= 0) { bursts.splice(i, 1); continue; }
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          b.vx *= 0.96;
+          b.vy = b.vy * 0.96 + 35 * dt;
+          const sprite = getGlowSprite(b.color, false);
+          const sz = b.size * b.life * 2;
+          ctx.globalAlpha = b.life;
+          ctx.drawImage(sprite, b.x - sz * 0.5, b.y - sz * 0.5, sz, sz);
+        }
+
+        ctx.globalAlpha = 1;
+      }
+
+      let lastFrameTime = performance.now();
+      function rafLoop(now) {
+        if (!state.manualMode) {
+          const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+          lastFrameTime = now;
+          renderStep(dt);
+        }
+        requestAnimationFrame(rafLoop);
+      }
+
+      // ==================== UI Controls ====================
+      const toastEl = document.getElementById('toast');
+      let toastTimer = null;
+      function showToast(msg, duration = 2600) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
+      }
+
+      function applyTheme(themeKey) {
+        currentThemeKey = themeKey;
+        const theme = THEMES[themeKey];
+        document.documentElement.style.setProperty('--accent', theme.accent);
+        const titleEl = document.getElementById('titleDisplay');
+        titleEl.style.color = theme.titleColor;
+        titleEl.style.textShadow = `0 0 16px ${theme.titleGlow}, 0 0 42px ${hexToRgba(theme.accent, 0.45)}`;
+
+        document.querySelectorAll('.theme-chip').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.theme === themeKey);
+        });
+        document.querySelectorAll('[data-dock-theme]').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.dockTheme === themeKey);
+        });
+        buildParticles();
+      }
+
+      let activePointers = new Map();
+      let lastPinchDist = 0;
+
+      canvas.addEventListener('pointerdown', (e) => {
+        canvas.setPointerCapture(e.pointerId);
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (activePointers.size === 1) {
+          state.isDragging = true;
+          state.dragMoved = 0;
+          state.lastX = e.clientX;
+          state.lastY = e.clientY;
+        } else if (activePointers.size === 2) {
+          const pts = [...activePointers.values()];
+          lastPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        }
+        spawnBurst(e.clientX, e.clientY);
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (!activePointers.has(e.pointerId)) return;
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (activePointers.size === 1 && state.isDragging) {
+          const dx = e.clientX - state.lastX;
+          const dy = e.clientY - state.lastY;
+          state.dragMoved += Math.abs(dx) + Math.abs(dy);
+          state.targetRotY += dx * 0.0065;
+          state.targetRotX = Math.max(-0.45, Math.min(0.65, state.targetRotX + dy * 0.0045));
+          state.lastX = e.clientX;
+          state.lastY = e.clientY;
+        } else if (activePointers.size === 2) {
+          const pts = [...activePointers.values()];
+          const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          if (lastPinchDist > 0) {
+            state.targetZoom = Math.max(0.55, Math.min(2.1, state.targetZoom * (dist / lastPinchDist)));
+          }
+          lastPinchDist = dist;
+        }
+      });
+
+      function onPointerEnd(e) {
+        if (activePointers.size === 1 && state.dragMoved < 8 && photoFrames.length > 0) {
+          for (let i = photoFrames.length - 1; i >= 0; i--) {
+            const r = photoFrames[i].screenRect;
+            if (r && e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h) {
+              openPhotoModal(photoFrames[i]);
+              break;
+            }
+          }
+        }
+        activePointers.delete(e.pointerId);
+        if (activePointers.size < 2) lastPinchDist = 0;
+        if (activePointers.size === 0) state.isDragging = false;
+      }
+      canvas.addEventListener('pointerup', onPointerEnd);
+      canvas.addEventListener('pointercancel', onPointerEnd);
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        state.targetZoom = Math.max(0.55, Math.min(2.1, state.targetZoom - e.deltaY * 0.001));
+      }, { passive: false });
+
+      canvas.addEventListener('dblclick', toggleScatter);
+
+      function setScatter(on) {
+        state.targetScatter = on ? 1 : 0;
+        document.getElementById('btnScatter').classList.toggle('active', on);
+        document.getElementById('dockScatter').classList.toggle('active', on);
+      }
+
+      function toggleScatter() {
+        setScatter(!(state.targetScatter > 0.5));
+      }
+
+      document.getElementById('btnScatter').addEventListener('click', toggleScatter);
+      document.getElementById('dockScatter').addEventListener('click', toggleScatter);
+
+      window.addEventListener('keydown', (e) => {
+        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+        if (e.code === 'Space') {
+          e.preventDefault();
+          toggleScatter();
+        } else if (e.key === 'h' || e.key === 'H') {
+          toggleZenMode();
+        } else if (e.key === 'Escape') {
+          photoModal.classList.remove('show');
+        }
+      });
+
+      document.querySelectorAll('.theme-chip').forEach(btn => {
+        btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+      });
+      document.querySelectorAll('[data-dock-theme]').forEach(btn => {
+        btn.addEventListener('click', () => applyTheme(btn.dataset.dockTheme));
+      });
+
+      const btnTopStar = document.getElementById('btnTopStar');
+      const btnTopHeart = document.getElementById('btnTopHeart');
+      const dockStar = document.getElementById('dockStar');
+      const dockHeart = document.getElementById('dockHeart');
+
+      function setTopper(mode) {
+        topperMode = mode;
+        btnTopStar.classList.toggle('active', mode === 'star');
+        btnTopHeart.classList.toggle('active', mode === 'heart');
+        dockStar.classList.toggle('active', mode === 'star');
+        dockHeart.classList.toggle('active', mode === 'heart');
+        buildTopperParticles();
+      }
+      btnTopStar.addEventListener('click', () => setTopper('star'));
+      btnTopHeart.addEventListener('click', () => setTopper('heart'));
+      dockStar.addEventListener('click', () => setTopper('star'));
+      dockHeart.addEventListener('click', () => setTopper('heart'));
+
+      // Greeting sync
+      const inputEyebrow = document.getElementById('inputEyebrow');
+      const inputTitle = document.getElementById('inputTitle');
+      const inputSub = document.getElementById('inputSub');
+      const inputSign = document.getElementById('inputSign');
+
+      const eyebrowDisplay = document.getElementById('eyebrowDisplay');
+      const titleDisplay = document.getElementById('titleDisplay');
+      const subDisplay = document.getElementById('subDisplay');
+      const signDisplay = document.getElementById('signDisplay');
+
+      if (params.get('eyebrow')) inputEyebrow.value = params.get('eyebrow');
+      if (params.get('title')) inputTitle.value = params.get('title');
+      if (params.get('sub')) inputSub.value = params.get('sub');
+      if (params.get('sign')) inputSign.value = params.get('sign');
+
+      function syncGreeting() {
+        eyebrowDisplay.textContent = inputEyebrow.value;
+        titleDisplay.textContent = inputTitle.value || 'Merry Christmas';
+        subDisplay.textContent = inputSub.value;
+        signDisplay.textContent = inputSign.value;
+      }
+      [inputEyebrow, inputTitle, inputSub, inputSign].forEach(inp => inp.addEventListener('input', syncGreeting));
+      syncGreeting();
+
+      document.querySelectorAll('[data-preset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = DEDICATION_PRESETS[btn.dataset.preset];
+          if (!p) return;
+          inputEyebrow.value = p.eyebrow;
+          inputTitle.value = p.title;
+          inputSub.value = p.sub;
+          inputSign.value = p.sign;
+          syncGreeting();
+          document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+
+      const photoInput = document.getElementById('photoInput');
+      document.getElementById('btnPhotos').addEventListener('click', () => photoInput.click());
+      document.getElementById('btnUploadPhotos').addEventListener('click', () => photoInput.click());
+      photoInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          layoutPhotoFrames(e.target.files);
+          photoInput.value = '';
+        }
+      });
+      document.getElementById('btnClearPhotos').addEventListener('click', () => {
+        photoFrames = [];
+        document.getElementById('btnPhotos').classList.remove('active');
+        photoModal.classList.remove('show');
+        showToast('Cleared Polaroid photos');
+      });
+
+      const panel = document.getElementById('controlPanel');
+      const btnTogglePanel = document.getElementById('btnTogglePanel');
+      btnTogglePanel.addEventListener('click', () => {
+        const isHidden = panel.classList.toggle('hidden');
+        btnTogglePanel.classList.toggle('active', !isHidden);
+      });
+
+      function toggleZenMode() {
+        const on = document.body.classList.toggle('zen-mode');
+        document.getElementById('btnZen').classList.toggle('active', on);
+        if (on) showToast('Clean view enabled (Press H to restore)');
+      }
+      document.getElementById('btnZen').addEventListener('click', toggleZenMode);
+
+      document.getElementById('btnResetView').addEventListener('click', () => {
+        state.targetRotX = 0.13;
+        state.targetZoom = 1;
+        setScatter(false);
+      });
+
+      document.getElementById('btnCopyLink').addEventListener('click', async () => {
+        const url = new URL(location.href);
+        url.searchParams.set('theme', currentThemeKey);
+        url.searchParams.set('top', topperMode);
+        url.searchParams.set('eyebrow', inputEyebrow.value);
+        url.searchParams.set('title', inputTitle.value);
+        url.searchParams.set('sub', inputSub.value);
+        url.searchParams.set('sign', inputSign.value);
+
+        try {
+          await navigator.clipboard.writeText(url.toString());
+          showToast('Share link copied!');
+        } catch {
+          showToast('Please copy the URL from the address bar');
+        }
+      });
+
+      // ==================== Music Box ====================
+      let audioCtx = null;
+      let musicPlaying = false;
+      let musicTimer = null;
+      let noteIndex = 0;
+
+      const MELODY = [
+        [392, 1], [523.25, 1], [523.25, 0.5], [587.33, 0.5], [523.25, 0.5], [493.88, 0.5],
+        [440, 1], [440, 1], [440, 1],
+        [587.33, 1], [587.33, 0.5], [659.25, 0.5], [587.33, 0.5], [523.25, 0.5],
+        [493.88, 1], [392, 1], [392, 1],
+        [659.25, 1], [659.25, 0.5], [698.46, 0.5], [659.25, 0.5], [587.33, 0.5],
+        [523.25, 1], [440, 1], [392, 0.5], [392, 0.5],
+        [440, 1], [587.33, 1], [493.88, 1], [523.25, 2],
+        [659.25, 1], [659.25, 1], [659.25, 2],
+        [659.25, 1], [659.25, 1], [659.25, 2],
+        [659.25, 1], [783.99, 1], [523.25, 1.5], [587.33, 0.5], [659.25, 3], [0, 1]
+      ];
+
+      function playBellNote(freq, durSec) {
+        if (!audioCtx || freq <= 0) return;
+        const now = audioCtx.currentTime;
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const g2 = audioCtx.createGain();
+
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(freq * 2, now);
+        g2.gain.setValueAtTime(0.18, now);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + durSec * 1.45);
+
+        osc1.connect(gain);
+        osc2.connect(g2);
+        g2.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + durSec * 1.5);
+        osc2.stop(now + durSec * 1.5);
+      }
+
+      function scheduleNextNote() {
+        if (!musicPlaying) return;
+        const [freq, beats] = MELODY[noteIndex % MELODY.length];
+        const durMs = beats * 360;
+        playBellNote(freq, durMs / 1000);
+        noteIndex++;
+        musicTimer = setTimeout(scheduleNextNote, durMs);
+      }
+
+      document.getElementById('btnMusic').addEventListener('click', () => {
+        musicPlaying = !musicPlaying;
+        document.getElementById('btnMusic').classList.toggle('active', musicPlaying);
+        if (musicPlaying) {
+          if (!audioCtx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioCtx();
+          }
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          scheduleNextNote();
+          showToast('Music Box On ♪');
+        } else {
+          clearTimeout(musicTimer);
+        }
+      });
+
+      // ==================== Hand Gesture Control ====================
+      const btnGesture = document.getElementById('btnGesture');
+      const gestureBox = document.getElementById('gestureBox');
+      const gestureStatus = document.getElementById('gestureStatus');
+      const camVideo = document.getElementById('camVideo');
+      const camOverlay = document.getElementById('camOverlay');
+      const camCtx = camOverlay.getContext('2d');
+
+      let mpLoaded = false;
+      let camStream = null;
+      let handsInstance = null;
+      let gestureLoopId = null;
+      let mpCdnBase = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands';
+
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.crossOrigin = 'anonymous';
+          s.onload = resolve;
+          s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      }
+
+      async function loadMediaPipeWithFallback() {
+        const bases = [
+          'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+          'https://fastly.jsdelivr.net/npm/@mediapipe/hands',
+          'https://unpkg.com/@mediapipe/hands'
+        ];
+        for (const base of bases) {
+          try {
+            await loadScript(`${base}/hands.js`);
+            mpCdnBase = base;
+            return;
+          } catch {}
+        }
+        throw new Error('All MediaPipe CDNs failed');
+      }
+
+      async function startGestureControl() {
+        if (state.gestureActive) {
+          stopGestureControl();
+          return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          showToast('Camera unavailable here. Use HTTPS or localhost.', 3500);
+          return;
+        }
+
+        gestureBox.classList.add('show');
+        btnGesture.classList.add('active');
+        gestureStatus.textContent = 'Loading hand tracking...';
+
+        try {
+          if (!mpLoaded) {
+            await loadMediaPipeWithFallback();
+            mpLoaded = true;
+          }
+
+          camStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: 320, height: 240 },
+            audio: false
+          });
+          camVideo.srcObject = camStream;
+          await camVideo.play();
+          camOverlay.width = camVideo.videoWidth || 320;
+          camOverlay.height = camVideo.videoHeight || 240;
+
+          handsInstance = new window.Hands({
+            locateFile: (file) => `${mpCdnBase}/${file}`
+          });
+          handsInstance.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 0,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.55
+          });
+          handsInstance.onResults(onHandResults);
+          state.gestureActive = true;
+          gestureStatus.textContent = 'Open Palm: Nebula · Fist: Tree';
+
+          const processFrame = async () => {
+            if (!state.gestureActive) return;
+            if (camVideo.readyState >= 2) {
+              await handsInstance.send({ image: camVideo });
+            }
+            gestureLoopId = requestAnimationFrame(processFrame);
+          };
+          processFrame();
+        } catch (err) {
+          console.error(err);
+          stopGestureControl();
+          showToast('Gesture failed (needs HTTPS/localhost & camera permission)', 4000);
+        }
+      }
+
+      function onHandResults(results) {
+        camCtx.clearRect(0, 0, camOverlay.width, camOverlay.height);
+        camCtx.drawImage(results.image, 0, 0, camOverlay.width, camOverlay.height);
+
+        if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+          state.handRotBias = 0;
+          gestureStatus.textContent = 'Show your hand...';
+          return;
+        }
+
+        const lm = results.multiHandLandmarks[0];
+        camCtx.fillStyle = '#ffd88a';
+        for (let i = 0; i < lm.length; i++) {
+          camCtx.beginPath();
+          camCtx.arc(lm[i].x * camOverlay.width, lm[i].y * camOverlay.height, 2.5, 0, Math.PI * 2);
+          camCtx.fill();
+        }
+
+        const wrist = lm[0];
+        const midMcp = lm[9];
+        const palmSize = Math.hypot(midMcp.x - wrist.x, midMcp.y - wrist.y) + 1e-5;
+        const tips = [4, 8, 12, 16, 20];
+        let avgTipDist = 0;
+        for (const idx of tips) {
+          avgTipDist += Math.hypot(lm[idx].x - wrist.x, lm[idx].y - wrist.y);
+        }
+        avgTipDist /= tips.length;
+        const openness = avgTipDist / palmSize;
+
+        const pinchDist = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y) / palmSize;
+        if (pinchDist < 0.28 && openness > 1.3 && photoFrames.length > 0 && state.pinchCooldown <= 0) {
+          state.pinchCooldown = 2.0;
+          if (photoModal.classList.contains('show')) photoModal.classList.remove('show');
+          else openPhotoModal(pick(photoFrames));
+          gestureStatus.textContent = '👌 Photo Zoom';
+          return;
+        }
+
+        const mappedScatter = Math.max(0, Math.min(1, (openness - 1.15) / 0.68));
+        state.targetScatter = mappedScatter;
+        document.getElementById('btnScatter').classList.toggle('active', mappedScatter > 0.5);
+        document.getElementById('dockScatter').classList.toggle('active', mappedScatter > 0.5);
+        state.handRotBias = (0.5 - lm[9].x) * 2.4;
+
+        gestureStatus.textContent = mappedScatter > 0.55 ? '🖐️ Star Nebula' : '✊ Christmas Tree';
+      }
+
+      function stopGestureControl() {
+        state.gestureActive = false;
+        state.handRotBias = 0;
+        cancelAnimationFrame(gestureLoopId);
+        if (camStream) {
+          camStream.getTracks().forEach(t => t.stop());
+          camStream = null;
+        }
+        gestureBox.classList.remove('show');
+        btnGesture.classList.remove('active');
+      }
+
+      btnGesture.addEventListener('click', startGestureControl);
+
+      // ==================== Deterministic Demo API (for studio recording) ====================
+      window.__treeDemo = {
+        enableManual() {
+          state.manualMode = true;
+        },
+        step(dt) {
+          renderStep(dt);
+        },
+        setTheme(k) {
+          applyTheme(k);
+        },
+        setTopper(m) {
+          setTopper(m);
+        },
+        setScatter(on) {
+          setScatter(on);
+        },
+        setCamera(rotX, zoom) {
+          state.targetRotX = rotX;
+          state.targetZoom = zoom;
+        },
+        burst(x, y) {
+          spawnBurst(x, y);
+        }
+      };
+
+      // ==================== Start ====================
+      window.addEventListener('resize', resize);
+      resize();
+      setTopper(topperMode);
+      applyTheme(currentThemeKey);
+      requestAnimationFrame(rafLoop);
+    })();
+  </script>
+</body>
+</html>
