@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Interactive 3D Particle Christmas Tree · Pure Luminous Stardust & Nebula Physics" />
+  <meta name="description" content="Interactive 3D GPU Particle Christmas Tree · 16,000+ WebGL Stardust & Nebula Physics" />
   <title>Merry Christmas · 3D Particle Tree</title>
   <style>
     :root {
       --accent: #ffd88a;
+      --bg-css: radial-gradient(circle at 50% 45%, #160e0a 0%, #09070f 48%, #020308 100%);
       --panel-bg: rgba(10, 14, 24, 0.58);
       --panel-border: rgba(255, 255, 255, 0.15);
       --text-main: rgba(255, 255, 255, 0.94);
@@ -25,21 +26,31 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #03040a;
+      background: var(--bg-css);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color: var(--text-main);
       user-select: none;
     }
 
-    canvas#scene {
-      display: block;
+    canvas#glScene, canvas#overlayScene {
+      position: fixed;
+      inset: 0;
       width: 100%;
       height: 100%;
+      display: block;
+    }
+
+    canvas#glScene {
+      z-index: 1;
+    }
+
+    canvas#overlayScene {
+      z-index: 2;
       cursor: grab;
       touch-action: none;
     }
 
-    canvas#scene:active {
+    canvas#overlayScene:active {
       cursor: grabbing;
     }
 
@@ -47,7 +58,7 @@
       position: fixed;
       left: 0;
       right: 0;
-      bottom: 5%;
+      bottom: 4.2%;
       pointer-events: none;
       text-align: center;
       padding: 0 28px;
@@ -458,7 +469,8 @@
   </style>
 </head>
 <body>
-  <canvas id="scene"></canvas>
+  <canvas id="glScene"></canvas>
+  <canvas id="overlayScene"></canvas>
 
   <div class="top-hint">Drag to rotate · Scroll to zoom · Double-click or Space to scatter · Press H for clean view</div>
   <div id="toast" class="toast"></div>
@@ -575,69 +587,65 @@
 
   <script>
     (() => {
-      const canvas = document.getElementById('scene');
-      const ctx = canvas.getContext('2d', { alpha: false });
+      const glCanvas = document.getElementById('glScene');
+      const ovCanvas = document.getElementById('overlayScene');
+      const ovCtx = ovCanvas.getContext('2d');
+
+      const gl = glCanvas.getContext('webgl', {
+        alpha: true,
+        premultipliedAlpha: false,
+        antialias: false,
+        powerPreference: 'high-performance'
+      }) || glCanvas.getContext('experimental-webgl');
 
       // ==================== Themes ====================
       const THEMES = {
         gold: {
           name: 'Champagne Gold',
-          bgTop: '#03040a',
-          bgMid: '#0b0811',
-          bgBot: '#180f09',
+          bgCss: 'radial-gradient(circle at 50% 45%, #1d1109 0%, #0b0710 52%, #020308 100%)',
           titleColor: '#fff7e6',
           titleGlow: 'rgba(255, 210, 122, 0.85)',
-          treeColors: ['#fff9eb', '#ffe5a3', '#ffc863', '#f5a536', '#d88935'],
-          ribbonColors: ['#ffffff', '#ffefc4', '#ffd068'],
-          ribbonGlow: 'rgba(255, 224, 150, 0.14)',
-          ornamentColors: ['#fff5d6', '#ffd166', '#ff8c5a', '#ffffff'],
-          ringColors: ['#ffe4a3', '#ffb95c', '#ffffff'],
-          topperGlow: '#ffc252',
+          treeColors: ['#fff6dc', '#ffd878', '#ffb84d', '#f28b2c', '#ffe49e'],
+          ribbonColors: ['#ffffff', '#fff0c2', '#ffd36b'],
+          ornamentColors: ['#fff5d6', '#ffd166', '#ff824a', '#ffffff'],
+          ringColors: ['#ffe4a3', '#ffb95c', '#ffd68a'],
+          topperColor: '#ffd470',
           accent: '#ffd88a'
         },
         pink: {
           name: 'Rose Pink',
-          bgTop: '#07030f',
-          bgMid: '#15071e',
-          bgBot: '#240921',
+          bgCss: 'radial-gradient(circle at 50% 45%, #230921 0%, #100519 52%, #03020a 100%)',
           titleColor: '#fff0f7',
           titleGlow: 'rgba(255, 138, 200, 0.88)',
-          treeColors: ['#fff4f9', '#ffc7e5', '#ff8ac8', '#de6aff', '#b182ff'],
-          ribbonColors: ['#ffffff', '#ffd8ee', '#ff96d1'],
-          ribbonGlow: 'rgba(255, 165, 218, 0.14)',
-          ornamentColors: ['#fff0f6', '#ffb3da', '#ffe1a8', '#d79eff'],
-          ringColors: ['#ffb8de', '#d88cff', '#ffffff'],
-          topperGlow: '#ff7ec6',
+          treeColors: ['#fff0f8', '#ffbbe0', '#ff78c0', '#d85eff', '#a675ff'],
+          ribbonColors: ['#ffffff', '#ffd6ed', '#ff8ace'],
+          ornamentColors: ['#fff0f6', '#ff9cd2', '#ffe0a3', '#d08eff'],
+          ringColors: ['#ffb8de', '#d88cff', '#ff94c8'],
+          topperColor: '#ff82c8',
           accent: '#ff94c8'
         },
         cyber: {
           name: 'Cyber Blue',
-          bgTop: '#020510',
-          bgMid: '#051124',
-          bgBot: '#091b34',
+          bgCss: 'radial-gradient(circle at 50% 45%, #081e3a 0%, #040d1d 52%, #01040b 100%)',
           titleColor: '#eefaff',
           titleGlow: 'rgba(118, 224, 255, 0.86)',
-          treeColors: ['#ffffff', '#ccf6ff', '#7ce6ff', '#48b8ff', '#8ea8ff'],
-          ribbonColors: ['#ffffff', '#c0f5ff', '#62d9ff'],
-          ribbonGlow: 'rgba(128, 232, 255, 0.14)',
-          ornamentColors: ['#ffe694', '#7ce8ff', '#ffffff', '#ffd06b'],
-          ringColors: ['#a6eeff', '#5cc5ff', '#ffffff'],
-          topperGlow: '#6be3ff',
+          treeColors: ['#ffffff', '#bff4ff', '#62e0ff', '#2ea8ff', '#7d9aff'],
+          ribbonColors: ['#ffffff', '#c0f5ff', '#5ad6ff'],
+          ornamentColors: ['#ffe694', '#6ee5ff', '#ffffff', '#7aa2ff'],
+          ringColors: ['#a6eeff', '#4dc0ff', '#7ce8ff'],
+          topperColor: '#7ae8ff',
           accent: '#7ce8ff'
         },
         aurora: {
           name: 'Aurora Night',
-          bgTop: '#020612',
-          bgMid: '#061424',
-          bgBot: '#081d22',
+          bgCss: 'radial-gradient(circle at 50% 45%, #072224 0%, #04101d 52%, #01040a 100%)',
           titleColor: '#effff8',
           titleGlow: 'rgba(110, 255, 184, 0.84)',
-          treeColors: ['#f2fff8', '#a3ffd6', '#4ef0b6', '#42c6ff', '#9c88ff'],
-          ribbonColors: ['#ffffff', '#b8ffe2', '#6ef5ff'],
-          ribbonGlow: 'rgba(120, 255, 200, 0.13)',
-          ornamentColors: ['#ffe58f', '#ff7aa8', '#80ffce', '#ffffff'],
-          ringColors: ['#82ffd0', '#66c9ff', '#ffffff'],
-          topperGlow: '#ff8cc8',
+          treeColors: ['#f2fff8', '#9effd3', '#38eba9', '#38bfff', '#9882ff'],
+          ribbonColors: ['#ffffff', '#b8ffe2', '#64f2ff'],
+          ornamentColors: ['#ffe58f', '#ff7aa8', '#6effc8', '#ffffff'],
+          ringColors: ['#7effce', '#5cc5ff', '#9effd3'],
+          topperColor: '#ff8cc8',
           accent: '#6effb8'
         }
       };
@@ -663,14 +671,11 @@
         }
       };
 
-      // ==================== URL Params ====================
       const params = new URLSearchParams(location.search);
       let currentThemeKey = THEMES[params.get('theme')] ? params.get('theme') : 'gold';
       let topperMode = params.get('top') === 'heart' ? 'heart' : 'star';
       const isShowcaseMode = params.get('showcase') === '1';
-      if (isShowcaseMode) {
-        document.body.classList.add('showcase-mode');
-      }
+      if (isShowcaseMode) document.body.classList.add('showcase-mode');
 
       const state = {
         width: window.innerWidth,
@@ -678,11 +683,12 @@
         dpr: Math.min(window.devicePixelRatio || 1, 2),
         rotY: 0,
         targetRotY: 0,
+        velY: 0,
         rotX: 0.13,
         targetRotX: 0.13,
         zoom: 1,
         targetZoom: 1,
-        autoRotateSpeed: 0.008,
+        autoRotateSpeed: 0.0045,
         isDragging: false,
         dragMoved: 0,
         lastX: 0,
@@ -696,72 +702,20 @@
         manualMode: false
       };
 
-      // ==================== Crisp Pinpoint Glow Sprites ====================
-      const spriteCache = new Map();
+      function hexToRgb01(hex) {
+        const clean = hex.replace('#', '');
+        const num = parseInt(clean, 16);
+        return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
+      }
 
       function hexToRgba(hex, alpha) {
         const clean = hex.replace('#', '');
         const num = parseInt(clean, 16);
-        const r = (num >> 16) & 255;
-        const g = (num >> 8) & 255;
-        const b = num & 255;
-        return `rgba(${r},${g},${b},${alpha})`;
+        return `rgba(${(num >> 16) & 255},${(num >> 8) & 255},${num & 255},${alpha})`;
       }
 
-      // Three.js-style pinpoint star sprite: sharp tiny white core + silky radial bloom
-      function getPinpointSprite(color) {
-        const key = 'pin_' + color;
-        if (spriteCache.has(key)) return spriteCache.get(key);
-        const size = 64;
-        const c = document.createElement('canvas');
-        c.width = size;
-        c.height = size;
-        const g = c.getContext('2d');
-        const half = size / 2;
-
-        const grad = g.createRadialGradient(half, half, 0, half, half, half);
-        grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.11, '#ffffff');
-        grad.addColorStop(0.24, color);
-        grad.addColorStop(0.48, hexToRgba(color, 0.22));
-        grad.addColorStop(0.75, hexToRgba(color, 0.04));
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = grad;
-        g.fillRect(0, 0, size, size);
-        spriteCache.set(key, c);
-        return c;
-      }
-
-      // Soft ambient halo orb (for fairy-light bulbs & topper flare)
-      function getOrbSprite(color) {
-        const key = 'orb_' + color;
-        if (spriteCache.has(key)) return spriteCache.get(key);
-        const size = 64;
-        const c = document.createElement('canvas');
-        c.width = size;
-        c.height = size;
-        const g = c.getContext('2d');
-        const half = size / 2;
-
-        const grad = g.createRadialGradient(half, half, 0, half, half, half);
-        grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.18, '#ffffff');
-        grad.addColorStop(0.38, color);
-        grad.addColorStop(0.68, hexToRgba(color, 0.26));
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = grad;
-        g.fillRect(0, 0, size, size);
-        spriteCache.set(key, c);
-        return c;
-      }
-
-      function rand(min, max) {
-        return min + Math.random() * (max - min);
-      }
-
-      function pick(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
-      }
+      function rand(min, max) { return min + Math.random() * (max - min); }
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
       function randomSpherePoint(minR, maxR) {
         const u = Math.random();
@@ -769,241 +723,419 @@
         const theta = u * 2 * Math.PI;
         const phi = Math.acos(2 * v - 1);
         const r = rand(minR, maxR);
-        return {
-          x: r * Math.sin(phi) * Math.cos(theta),
-          y: r * Math.cos(phi) * 0.82,
-          z: r * Math.sin(phi) * Math.sin(theta)
-        };
+        return [
+          r * Math.sin(phi) * Math.cos(theta),
+          r * Math.cos(phi) * 0.82,
+          r * Math.sin(phi) * Math.sin(theta)
+        ];
       }
 
-      // ==================== Particle Systems ====================
-      let bgStars = [];
-      let treeParticles = [];
-      let ribbonCurves = [[], []];
-      let ringParticles = [];
-      let snowParticles = [];
-      let emberParticles = [];
-      let topperParticles = [];
-      let photoFrames = [];
-      let bursts = [];
+      // ==================== WebGL Shader Program ====================
+      const VS_SRC = `
+        attribute vec3 aTreePos;
+        attribute vec3 aScatterPos;
+        attribute vec3 aColor;
+        attribute vec4 aParams; // x: size, y: alpha, z: phase, w: twinkleSpeed
+        attribute vec4 aMeta;   // x: type (0=tree,1=ring,2=topper,3=snow,4=ember,5=bgStar), y: speed, z: shape (0=soft,1=diamond,2=orb), w: extra
+
+        uniform float uTime;
+        uniform float uScatter;
+        uniform float uRotY;
+        uniform float uRotX;
+        uniform float uTopRotY;
+        uniform float uFov;
+        uniform float uCamDist;
+        uniform vec2 uResolution;
+        uniform vec2 uCenter;
+        uniform float uDpr;
+
+        varying vec3 vColor;
+        varying float vAlpha;
+        varying float vShape;
+
+        void main() {
+          float pType = aMeta.x;
+          vShape = aMeta.z;
+          vColor = aColor;
+
+          // Background stars (screen-space NDC)
+          if (pType > 4.5) {
+            float tw = 0.45 + 0.55 * sin(uTime * aParams.w + aParams.z);
+            gl_Position = vec4(aTreePos.x * 2.0 - 1.0, 1.0 - aTreePos.y * 2.0, 0.99, 1.0);
+            gl_PointSize = aParams.x * uDpr;
+            vAlpha = aParams.y * tw;
+            return;
+          }
+
+          vec3 pos = aTreePos;
+          float angleY = uRotY;
+
+          if (pType < 0.5) {
+            // Tree particle + nebula vortex scatter
+            float sc = uScatter;
+            pos = mix(aTreePos, aScatterPos, sc);
+            if (sc > 0.002) {
+              float sw = sc * 2.2 * (1.0 - length(aTreePos.xz) * 0.0012);
+              float cs = cos(sw), sn = sin(sw);
+              pos.xz = vec2(pos.x * cs - pos.z * sn, pos.x * sn + pos.z * cs);
+            }
+          } else if (pType < 1.5) {
+            // Galaxy ring differential rotation
+            float ang = uTime * aMeta.y;
+            float cs = cos(ang), sn = sin(ang);
+            pos.xz = vec2(pos.x * cs - pos.z * sn, pos.x * sn + pos.z * cs);
+            pos.xz *= (1.0 + uScatter * 0.55);
+            pos.y += sin(uTime * 1.8 + aParams.z) * 2.5;
+          } else if (pType < 2.5) {
+            // Tree topper (gently faces viewer when assembled)
+            pos = mix(aTreePos, aScatterPos, uScatter);
+            angleY = mix(uTopRotY, uRotY, uScatter);
+          } else if (pType < 3.5) {
+            // Falling 3D snow
+            float span = 760.0;
+            pos.y = mod(aTreePos.y + uTime * aMeta.y + 430.0, span) - 430.0;
+            pos.x += sin(uTime * 1.1 + aParams.z) * 16.0;
+          } else {
+            // Rising embers
+            float span = 510.0;
+            pos.y = 240.0 - mod(240.0 - aTreePos.y + uTime * aMeta.y, span);
+            pos.x += sin(uTime * 1.5 + aParams.z) * 12.0;
+          }
+
+          // 3D Camera Rotation
+          float cy = cos(angleY), sy = sin(angleY);
+          float rx = pos.x * cy - pos.z * sy;
+          float rz = pos.x * sy + pos.z * cy;
+
+          float cx = cos(uRotX), sx = sin(uRotX);
+          float ry = pos.y * cx - rz * sx;
+          float rz2 = pos.y * sx + rz * cx;
+
+          float zCam = rz2 + uCamDist;
+          if (zCam <= 40.0) {
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            gl_PointSize = 0.0;
+            vAlpha = 0.0;
+            return;
+          }
+
+          float scale = uFov / zCam;
+          float sxScreen = uCenter.x + rx * scale;
+          float syScreen = uCenter.y + ry * scale;
+
+          vec2 ndc = vec2(
+            (sxScreen / uResolution.x) * 2.0 - 1.0,
+            1.0 - (syScreen / uResolution.y) * 2.0
+          );
+
+          gl_Position = vec4(ndc, clamp((zCam - 40.0) / 2000.0, 0.0, 0.98), 1.0);
+
+          float twinkle = 0.62 + 0.38 * sin(uTime * aParams.w + aParams.z);
+          float depthAtten = clamp((uCamDist + 160.0 - zCam) / 310.0, 0.36, 1.22);
+          if (pType > 0.5 && pType < 1.5) {
+            depthAtten *= (1.0 - uScatter * 0.62);
+          }
+
+          float ptSize = aParams.x * scale * uDpr;
+          if (aMeta.z > 0.5 && aMeta.z < 1.5) {
+            ptSize *= (0.7 + 0.6 * max(0.0, sin(uTime * aParams.w + aParams.z)));
+          }
+          gl_PointSize = clamp(ptSize, 1.0, 96.0);
+          vAlpha = clamp(aParams.y * twinkle * depthAtten, 0.0, 1.0);
+        }
+      `;
+
+      const FS_SRC = `
+        precision mediump float;
+        varying vec3 vColor;
+        varying float vAlpha;
+        varying float vShape;
+
+        void main() {
+          vec2 uv = gl_PointCoord - vec2(0.5);
+          float d2 = dot(uv, uv);
+          if (d2 > 0.25) discard;
+
+          float intensity = 0.0;
+          vec3 col = vColor;
+
+          if (vShape < 0.5) {
+            // Crisp pinpoint star + rich colored bloom halo
+            float core = exp(-d2 * 56.0);
+            float halo = exp(-d2 * 9.5) * 0.68;
+            intensity = core + halo;
+            col = mix(vColor * 1.18, vec3(1.0), core * 0.72);
+          } else if (vShape < 1.5) {
+            // 4-point anamorphic crystal diamond flare
+            float d = length(uv);
+            float rayH = exp(-abs(uv.y) * 34.0) * exp(-abs(uv.x) * 6.5);
+            float rayV = exp(-abs(uv.x) * 34.0) * exp(-abs(uv.y) * 6.5);
+            float core = exp(-d * d * 48.0);
+            intensity = core * 0.95 + (rayH + rayV) * 0.78;
+            col = mix(vColor * 1.15, vec3(1.0), clamp(core + (rayH + rayV) * 0.48, 0.0, 1.0));
+          } else {
+            // Soft luminous fairy-light orb
+            float core = exp(-d2 * 32.0);
+            float halo = exp(-d2 * 8.2) * 0.76;
+            intensity = core * 0.9 + halo;
+            col = mix(vColor * 1.18, vec3(1.0), core * 0.68);
+          }
+
+          float a = clamp(intensity * vAlpha, 0.0, 1.0);
+          gl_FragColor = vec4(col, a);
+        }
+      `;
+
+      function compileShader(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          console.error(gl.getShaderInfoLog(s));
+        }
+        return s;
+      }
+
+      const program = gl.createProgram();
+      gl.attachShader(program, compileShader(gl.VERTEX_SHADER, VS_SRC));
+      gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, FS_SRC));
+      gl.linkProgram(program);
+      gl.useProgram(program);
+
+      const loc = {
+        aTreePos: gl.getAttribLocation(program, 'aTreePos'),
+        aScatterPos: gl.getAttribLocation(program, 'aScatterPos'),
+        aColor: gl.getAttribLocation(program, 'aColor'),
+        aParams: gl.getAttribLocation(program, 'aParams'),
+        aMeta: gl.getAttribLocation(program, 'aMeta'),
+        uTime: gl.getUniformLocation(program, 'uTime'),
+        uScatter: gl.getUniformLocation(program, 'uScatter'),
+        uRotY: gl.getUniformLocation(program, 'uRotY'),
+        uRotX: gl.getUniformLocation(program, 'uRotX'),
+        uTopRotY: gl.getUniformLocation(program, 'uTopRotY'),
+        uFov: gl.getUniformLocation(program, 'uFov'),
+        uCamDist: gl.getUniformLocation(program, 'uCamDist'),
+        uResolution: gl.getUniformLocation(program, 'uResolution'),
+        uCenter: gl.getUniformLocation(program, 'uCenter'),
+        uDpr: gl.getUniformLocation(program, 'uDpr')
+      };
+
+      const vbo = gl.createBuffer();
+      const STRIDE_FLOATS = 17; // 3 + 3 + 3 + 4 + 4
+      let particleCount = 0;
 
       const TREE_HEIGHT = 432;
       const TREE_BASE_Y = 200;
       const TREE_TOP_Y = TREE_BASE_Y - TREE_HEIGHT; // -232
       const TREE_RADIUS = 168;
 
-      function buildParticles() {
+      function buildGPUData() {
         const theme = THEMES[currentThemeKey];
-        spriteCache.clear();
+        const rows = [];
 
-        bgStars = [];
-        for (let i = 0; i < 260; i++) {
-          bgStars.push({
-            x: Math.random(),
-            y: Math.random(),
-            size: rand(0.8, 2.2),
-            phase: rand(0, Math.PI * 2),
-            speed: rand(0.8, 2.6),
-            alpha: rand(0.18, 0.86)
-          });
+        function pushPt(tx, ty, tz, sx, sy, sz, hex, size, alpha, phase, speed, pType, metaSpeed, shapeFlag) {
+          const [r, g, b] = hexToRgb01(hex);
+          rows.push(
+            tx, ty, tz,
+            sx, sy, sz,
+            r, g, b,
+            size, alpha, phase, speed,
+            pType, metaSpeed, shapeFlag, 0
+          );
         }
 
-        treeParticles = [];
+        // 1. Deep-space background stars (420)
+        for (let i = 0; i < 420; i++) {
+          pushPt(
+            Math.random(), Math.random(), 0,
+            0, 0, 0,
+            '#ffffff', rand(1.2, 3.2), rand(0.25, 0.85), rand(0, 6.28), rand(0.8, 2.5),
+            5, 0, 0
+          );
+        }
 
-        // 1. Airy, Ethereal Volumetric Stardust Cone (4,400 crisp micro-stars)
-        const foliageCount = 4400;
-        for (let i = 0; i < foliageCount; i++) {
-          const hNorm = Math.pow(Math.random(), 0.78);
+        // 2. Outer Velvet Silhouette Cone (5,200 crisp pinpoint stardust)
+        for (let i = 0; i < 5200; i++) {
+          const hNorm = Math.pow(Math.random(), 0.76);
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          // Gentle organic tier ripple (graceful, not jagged!)
           const wave = 1 + 0.08 * Math.sin(hNorm * Math.PI * 10);
           const maxR = hNorm * TREE_RADIUS * wave;
-          const radialBias = Math.pow(Math.random(), 0.38);
+          const radialBias = 0.62 + 0.38 * Math.pow(Math.random(), 0.45);
           const r = maxR * radialBias;
-          const angle = Math.random() * Math.PI * 2;
-          const tx = Math.cos(angle) * r;
-          const tz = Math.sin(angle) * r;
-          const sp = randomSpherePoint(180, 500);
-
-          treeParticles.push({
-            tx, ty: y, tz,
-            sx: sp.x, sy: sp.y, sz: sp.z,
-            size: rand(2.6, 6.0) * (0.72 + 0.42 * radialBias),
-            baseAlpha: rand(0.32, 0.94),
-            phase: rand(0, Math.PI * 2),
-            twinkleSpeed: rand(1.5, 4.4),
-            color: pick(theme.treeColors),
-            kind: 'pin'
-          });
+          const ang = Math.random() * Math.PI * 2;
+          const [sx, sy, sz] = randomSpherePoint(180, 510);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            pick(theme.treeColors), rand(4.5, 11.5), rand(0.45, 0.92), rand(0, 6.28), rand(1.6, 4.4),
+            0, 0, 0
+          );
         }
 
-        // 2. Dense Double-Helix Stardust Ribbons (1,600 sparkling particles + faint silk trail)
-        const ribbonCount = 1600;
+        // 3. Soft Volumetric Inner Mist (2,400 particles)
+        for (let i = 0; i < 2400; i++) {
+          const hNorm = Math.pow(Math.random(), 0.75);
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const r = hNorm * TREE_RADIUS * rand(0.05, 0.72);
+          const ang = Math.random() * Math.PI * 2;
+          const [sx, sy, sz] = randomSpherePoint(150, 440);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            pick(theme.treeColors), rand(6.5, 14.0), rand(0.16, 0.38), rand(0, 6.28), rand(1.2, 3.0),
+            0, 0, 2
+          );
+        }
+
+        // 4. Sweeping Double-Helix Diamond Light Garlands (2,800 particles)
         const turns = 6.5;
-        for (let i = 0; i < ribbonCount; i++) {
+        for (let i = 0; i < 2800; i++) {
           const strand = i % 2;
-          const t = i / ribbonCount;
-          const jitterT = Math.min(1, Math.max(0, t + rand(-0.013, 0.013)));
-          const y = TREE_TOP_Y + jitterT * TREE_HEIGHT;
-          const r = jitterT * TREE_RADIUS * 1.04 + rand(-5, 6);
-          const angle = jitterT * turns * Math.PI * 2 + strand * Math.PI + rand(-0.15, 0.15);
-          const tx = Math.cos(angle) * r;
-          const tz = Math.sin(angle) * r;
-          const sp = randomSpherePoint(200, 520);
-
-          treeParticles.push({
-            tx, ty: y, tz,
-            sx: sp.x, sy: sp.y, sz: sp.z,
-            size: rand(3.6, 7.8),
-            baseAlpha: rand(0.65, 1.0),
-            phase: rand(0, Math.PI * 2),
-            twinkleSpeed: rand(2.2, 5.2),
-            color: pick(theme.ribbonColors),
-            kind: 'pin'
-          });
+          const t = i / 2800;
+          const jt = Math.min(1, Math.max(0, t + rand(-0.011, 0.011)));
+          const y = TREE_TOP_Y + jt * TREE_HEIGHT;
+          const r = jt * TREE_RADIUS * 1.04 + rand(-4.5, 5.5);
+          const ang = jt * turns * Math.PI * 2 + strand * Math.PI + rand(-0.12, 0.12);
+          const [sx, sy, sz] = randomSpherePoint(200, 530);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            pick(theme.ribbonColors), rand(6.5, 14.5), rand(0.65, 1.0), rand(0, 6.28), rand(2.2, 5.0),
+            0, 0, 0
+          );
         }
 
-        ribbonCurves = [[], []];
-        const curveSteps = 200;
-        for (let strand = 0; strand < 2; strand++) {
-          for (let i = 0; i <= curveSteps; i++) {
-            const t = i / curveSteps;
-            const y = TREE_TOP_Y + t * TREE_HEIGHT;
-            const r = t * TREE_RADIUS * 1.045;
-            const angle = t * turns * Math.PI * 2 + strand * Math.PI;
-            ribbonCurves[strand].push({ x: Math.cos(angle) * r, y, z: Math.sin(angle) * r });
-          }
-        }
-
-        // 3. Pure Luminous Fairy-Light Orbs (64 additive glow bulbs, NO opaque plastic balls!)
-        const ornamentCount = 64;
-        for (let i = 0; i < ornamentCount; i++) {
-          const hNorm = 0.14 + (i / ornamentCount) * 0.83;
+        // 5. Luminous Fairy-Light Orbs (75) + Crisp 4-Point Sparkle Diamonds (55)
+        for (let i = 0; i < 75; i++) {
+          const hNorm = 0.12 + (i / 75) * 0.85;
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT + rand(-4, 4);
           const r = hNorm * TREE_RADIUS * rand(0.92, 1.05);
-          const angle = i * 2.39996 + rand(-0.14, 0.14);
-          const tx = Math.cos(angle) * r;
-          const tz = Math.sin(angle) * r;
-          const sp = randomSpherePoint(160, 450);
-
-          treeParticles.push({
-            tx, ty: y, tz,
-            sx: sp.x, sy: sp.y, sz: sp.z,
-            size: rand(12, 19),
-            baseAlpha: rand(0.82, 1.0),
-            phase: rand(0, Math.PI * 2),
-            twinkleSpeed: rand(1.4, 3.2),
-            color: theme.ornamentColors[i % theme.ornamentColors.length],
-            kind: 'orb'
-          });
+          const ang = i * 2.39996 + rand(-0.15, 0.15);
+          const [sx, sy, sz] = randomSpherePoint(170, 460);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            theme.ornamentColors[i % theme.ornamentColors.length], rand(18, 28), rand(0.75, 0.98), rand(0, 6.28), rand(1.4, 3.0),
+            0, 0, 2
+          );
+        }
+        for (let i = 0; i < 55; i++) {
+          const hNorm = 0.1 + (i / 55) * 0.87;
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const r = hNorm * TREE_RADIUS * rand(0.95, 1.06);
+          const ang = i * 2.39996 + 1.1;
+          const [sx, sy, sz] = randomSpherePoint(180, 480);
+          pushPt(
+            Math.cos(ang) * r, y, Math.sin(ang) * r,
+            sx, sy, sz,
+            '#ffffff', rand(20, 34), rand(0.7, 1.0), rand(0, 6.28), rand(1.8, 3.8),
+            0, 0, 1
+          );
         }
 
-        buildTopperParticles();
-
-        // 4. Milky Way Galaxy Base Rings (2,100 fine pinpoint stars)
-        ringParticles = [];
-        const rings = [
-          { rMin: 185, rMax: 238, count: 780, speed: 0.24 },
-          { rMin: 256, rMax: 320, count: 720, speed: -0.17 },
-          { rMin: 338, rMax: 420, count: 600, speed: 0.11 }
-        ];
-        rings.forEach((ring, rIdx) => {
-          for (let i = 0; i < ring.count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const radius = rand(ring.rMin, ring.rMax) + Math.sin(angle * 2 + rIdx) * 8;
-            const yOffset = rand(-4, 5) + Math.sin(angle * 3 + rIdx) * 2.5;
-            ringParticles.push({
-              angle,
-              radius,
-              y: TREE_BASE_Y + 18 + yOffset,
-              speed: ring.speed,
-              size: rand(2.2, 5.2),
-              alpha: rand(0.28, 0.92),
-              phase: rand(0, Math.PI * 2),
-              color: pick(theme.ringColors)
-            });
-          }
-        });
-
-        // 5. Falling 3D Snow
-        snowParticles = [];
-        for (let i = 0; i < 220; i++) {
-          snowParticles.push({
-            x: rand(-540, 540),
-            y: rand(-430, 330),
-            z: rand(-430, 430),
-            vy: rand(22, 54),
-            vx: rand(-9, 9),
-            swayPhase: rand(0, Math.PI * 2),
-            size: rand(2.6, 6.2),
-            alpha: rand(0.26, 0.78)
-          });
-        }
-
-        // 6. Rising Stardust Embers
-        emberParticles = [];
-        for (let i = 0; i < 70; i++) {
-          const r = rand(35, 250);
-          const ang = Math.random() * Math.PI * 2;
-          emberParticles.push({
-            x: Math.cos(ang) * r,
-            y: rand(-230, 240),
-            z: Math.sin(ang) * r,
-            vy: rand(16, 40),
-            phase: rand(0, Math.PI * 2),
-            size: rand(3.5, 7.2),
-            alpha: rand(0.3, 0.82)
-          });
-        }
-      }
-
-      function buildTopperParticles() {
-        topperParticles = [];
-        const count = 220;
+        // 6. Tree Topper (Star or Heart, 520 razor-sharp particles + central lens star)
         if (topperMode === 'star') {
-          for (let i = 0; i < count; i++) {
-            const outerR = 29;
-            const innerR = 12;
+          for (let i = 0; i < 520; i++) {
+            const outerR = 30, innerR = 12.5;
             const edge = Math.floor(Math.random() * 10);
             const t = Math.random();
             const a1 = (edge * Math.PI) / 5 - Math.PI / 2;
             const a2 = ((edge + 1) * Math.PI) / 5 - Math.PI / 2;
             const r1 = edge % 2 === 0 ? outerR : innerR;
             const r2 = (edge + 1) % 2 === 0 ? outerR : innerR;
-            const fill = i < 75 ? rand(0.15, 0.85) : 1;
+            const fill = i < 160 ? rand(0.15, 0.88) : rand(0.96, 1.03);
             const px = (Math.cos(a1) * r1 * (1 - t) + Math.cos(a2) * r2 * t) * fill;
             const py = (Math.sin(a1) * r1 * (1 - t) + Math.sin(a2) * r2 * t) * fill;
-            const sp = randomSpherePoint(120, 320);
-            topperParticles.push({
-              tx: px,
-              ty: TREE_TOP_Y - 21 + py,
-              tz: rand(-4, 4),
-              sx: sp.x, sy: sp.y - 160, sz: sp.z,
-              size: rand(3.4, 6.4),
-              phase: rand(0, Math.PI * 2)
-            });
+            const [sx, sy, sz] = randomSpherePoint(120, 340);
+            pushPt(
+              px, TREE_TOP_Y - 22 + py, rand(-4, 4),
+              sx, sy - 160, sz,
+              theme.topperColor, rand(6.5, 12.5), rand(0.75, 1.0), rand(0, 6.28), rand(2.5, 4.5),
+              2, 0, 0
+            );
           }
+          // Central anamorphic star flare
+          pushPt(0, TREE_TOP_Y - 22, 0, 0, -160, 0, theme.topperColor, 68, 0.92, 0, 2.4, 2, 0, 1);
         } else {
-          for (let i = 0; i < count; i++) {
+          for (let i = 0; i < 520; i++) {
             const t = Math.random() * Math.PI * 2;
-            const fill = i < 42 ? rand(0.25, 0.72) : rand(0.94, 1.03);
+            const fill = i < 110 ? rand(0.25, 0.74) : rand(0.95, 1.03);
             const hx = 16 * Math.pow(Math.sin(t), 3);
             const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-            const scale = 1.75 * fill;
-            const sp = randomSpherePoint(120, 320);
-            topperParticles.push({
-              tx: hx * scale,
-              ty: TREE_TOP_Y - 26 + hy * scale,
-              tz: rand(-4, 4),
-              sx: sp.x, sy: sp.y - 160, sz: sp.z,
-              size: i < 42 ? rand(2.6, 4.4) : rand(3.4, 5.8),
-              phase: rand(0, Math.PI * 2)
-            });
+            const scale = 1.78 * fill;
+            const [sx, sy, sz] = randomSpherePoint(120, 340);
+            pushPt(
+              hx * scale, TREE_TOP_Y - 27 + hy * scale, rand(-4, 4),
+              sx, sy - 160, sz,
+              theme.topperColor, i < 110 ? rand(5.5, 9.5) : rand(7.0, 12.5), i < 110 ? 0.52 : 0.95, rand(0, 6.28), rand(2.5, 4.5),
+              2, 0, 0
+            );
           }
+          pushPt(0, TREE_TOP_Y - 24, 0, 0, -160, 0, theme.topperColor, 54, 0.42, 0, 2.0, 2, 0, 2);
         }
+
+        // 7. Milky Way Spiral Galaxy Base (4,800 fine GPU stars)
+        const rings = [
+          { rMin: 180, rMax: 242, count: 1800, speed: 0.24 },
+          { rMin: 254, rMax: 326, count: 1600, speed: -0.17 },
+          { rMin: 338, rMax: 435, count: 1400, speed: 0.11 }
+        ];
+        rings.forEach((ring, rIdx) => {
+          for (let i = 0; i < ring.count; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const radius = rand(ring.rMin, ring.rMax) + Math.sin(ang * 2 + rIdx) * 10;
+            const yOffset = rand(-4, 5) + Math.sin(ang * 3 + rIdx) * 2.5;
+            pushPt(
+              Math.cos(ang) * radius, TREE_BASE_Y + 18 + yOffset, Math.sin(ang) * radius,
+              0, 0, 0,
+              pick(theme.ringColors), rand(4.5, 10.5), rand(0.32, 0.92), rand(0, 6.28), rand(1.6, 3.6),
+              1, ring.speed, 0
+            );
+          }
+        });
+
+        // 8. Falling 3D Snow (450) + Rising Stardust Embers (140)
+        for (let i = 0; i < 450; i++) {
+          pushPt(
+            rand(-560, 560), rand(-430, 330), rand(-450, 450),
+            0, 0, 0,
+            '#e0f2ff', rand(5.0, 11.5), rand(0.28, 0.78), rand(0, 6.28), rand(1.0, 2.2),
+            3, rand(20, 52), 2
+          );
+        }
+        for (let i = 0; i < 140; i++) {
+          const r = rand(35, 255), ang = Math.random() * Math.PI * 2;
+          pushPt(
+            Math.cos(ang) * r, rand(-230, 240), Math.sin(ang) * r,
+            0, 0, 0,
+            theme.accent, rand(6.0, 13.0), rand(0.32, 0.85), rand(0, 6.28), rand(2.0, 4.0),
+            4, rand(18, 46), 0
+          );
+        }
+
+        particleCount = rows.length / STRIDE_FLOATS;
+        const buf = new Float32Array(rows);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
+
+        const bpe = 4;
+        const stride = STRIDE_FLOATS * bpe;
+        gl.enableVertexAttribArray(loc.aTreePos);
+        gl.vertexAttribPointer(loc.aTreePos, 3, gl.FLOAT, false, stride, 0);
+        gl.enableVertexAttribArray(loc.aScatterPos);
+        gl.vertexAttribPointer(loc.aScatterPos, 3, gl.FLOAT, false, stride, 3 * bpe);
+        gl.enableVertexAttribArray(loc.aColor);
+        gl.vertexAttribPointer(loc.aColor, 3, gl.FLOAT, false, stride, 6 * bpe);
+        gl.enableVertexAttribArray(loc.aParams);
+        gl.vertexAttribPointer(loc.aParams, 4, gl.FLOAT, false, stride, 9 * bpe);
+        gl.enableVertexAttribArray(loc.aMeta);
+        gl.vertexAttribPointer(loc.aMeta, 4, gl.FLOAT, false, stride, 13 * bpe);
       }
 
-      // ==================== Polaroid Photo Frames ====================
+      // ==================== 2D Overlay (Photos & Click Bursts only) ====================
+      let photoFrames = [];
+      let bursts = [];
+
       function layoutPhotoFrames(files) {
         const list = Array.from(files).slice(0, 18);
         if (!list.length) return;
@@ -1015,13 +1147,13 @@
           const total = list.length;
           const hNorm = 0.24 + (idx / Math.max(1, total - 1)) * 0.64;
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * 1.12 + 12;
+          const r = hNorm * TREE_RADIUS * 1.12 + 14;
           const angle = idx * 2.39996;
-          const sp = randomSpherePoint(190, 360);
+          const [sx, sy, sz] = randomSpherePoint(190, 360);
           photoFrames.push({
             img, url,
             tx: Math.cos(angle) * r, ty: y, tz: Math.sin(angle) * r,
-            sx: sp.x, sy: sp.y, sz: sp.z,
+            sx, sy, sz,
             tilt: rand(-0.14, 0.14),
             screenRect: null
           });
@@ -1040,19 +1172,18 @@
         modalCaption.textContent = 'Winter Memories ♥';
         photoModal.classList.add('show');
       }
-
       photoModal.addEventListener('click', () => photoModal.classList.remove('show'));
 
       function spawnBurst(screenX, screenY) {
         const theme = THEMES[currentThemeKey];
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 24; i++) {
           const ang = Math.random() * Math.PI * 2;
-          const spd = rand(45, 180);
+          const spd = rand(50, 190);
           bursts.push({
             x: screenX, y: screenY,
             vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-            life: 1, decay: rand(0.9, 1.65),
-            size: rand(7, 15),
+            life: 1, decay: rand(1.1, 1.9),
+            size: rand(3, 6.5),
             color: pick(theme.ribbonColors)
           });
         }
@@ -1063,339 +1194,143 @@
         const rz = x * sinY + z * cosY;
         const ry = y * cosX - rz * sinX;
         const rz2 = y * sinX + rz * cosX;
-
         const zCam = rz2 + dist;
         if (zCam <= 40) return null;
         const scale = fov / zCam;
         return { sx: cx + rx * scale, sy: cy + ry * scale, scale, depth: zCam };
       }
 
+      // ==================== Resize & Render Loop ====================
       function resize() {
         state.width = window.innerWidth;
         state.height = window.innerHeight;
         state.dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.floor(state.width * state.dpr);
-        canvas.height = Math.floor(state.height * state.dpr);
-        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+        glCanvas.width = Math.floor(state.width * state.dpr);
+        glCanvas.height = Math.floor(state.height * state.dpr);
+        gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+
+        ovCanvas.width = Math.floor(state.width * state.dpr);
+        ovCanvas.height = Math.floor(state.height * state.dpr);
+        ovCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
       }
 
       function renderStep(dt) {
         state.time += dt;
         if (state.pinchCooldown > 0) state.pinchCooldown -= dt;
 
-        const theme = THEMES[currentThemeKey];
+        if (!state.isDragging) {
+          state.targetRotY += (state.autoRotateSpeed * (dt * 60)) + state.velY + state.handRotBias * dt * 2.2;
+          state.velY *= Math.pow(0.92, dt * 60);
+        }
+        state.rotY += (state.targetRotY - state.rotY) * Math.min(1, dt * 8);
+        state.rotX += (state.targetRotX - state.rotX) * Math.min(1, dt * 8);
+        state.zoom += (state.targetZoom - state.zoom) * Math.min(1, dt * 8);
+        state.scatter += (state.targetScatter - state.scatter) * Math.min(1, dt * 4.0);
+
         const w = state.width;
         const h = state.height;
-
-        if (!state.isDragging) {
-          state.targetRotY += (state.autoRotateSpeed * (dt * 60)) + state.handRotBias * dt * 2.2;
-        }
-        state.rotY += (state.targetRotY - state.rotY) * Math.min(1, dt * 6);
-        state.rotX += (state.targetRotX - state.rotX) * Math.min(1, dt * 6);
-        state.zoom += (state.targetZoom - state.zoom) * Math.min(1, dt * 7);
-        state.scatter += (state.targetScatter - state.scatter) * Math.min(1, dt * 3.8);
-
-        // 1. Night Sky
-        ctx.globalCompositeOperation = 'source-over';
-        const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-        bgGrad.addColorStop(0, theme.bgTop);
-        bgGrad.addColorStop(0.55, theme.bgMid);
-        bgGrad.addColorStop(1, theme.bgBot);
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, w, h);
-
         const isPortrait = w < h;
-        const cx = w * 0.5;
-        const cy = h * (isPortrait ? 0.46 : 0.465);
-        const haloRadius = Math.min(w, h) * 0.48;
-        const halo = ctx.createRadialGradient(cx, cy, 12, cx, cy, haloRadius);
-        halo.addColorStop(0, hexToRgba(theme.accent, 0.14));
-        halo.addColorStop(0.48, hexToRgba(theme.accent, 0.04));
-        halo.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = halo;
-        ctx.fillRect(0, 0, w, h);
-
-        // 2. Background Stars
-        ctx.globalCompositeOperation = 'lighter';
-        for (let i = 0; i < bgStars.length; i++) {
-          const s = bgStars[i];
-          const tw = 0.5 + 0.5 * Math.sin(state.time * s.speed + s.phase);
-          ctx.globalAlpha = s.alpha * (0.4 + 0.6 * tw);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(s.x * w, s.y * h, s.size, s.size);
-        }
-
         const minDim = Math.min(w, h);
-        const fov = (isPortrait ? w * 0.78 : minDim * 0.81) * state.zoom;
+        const fov = (isPortrait ? w * 0.78 : minDim * 0.80) * state.zoom;
         const camDist = 665;
-        const sinY = Math.sin(state.rotY);
-        const cosY = Math.cos(state.rotY);
-        const sinX = Math.sin(state.rotX);
-        const cosX = Math.cos(state.rotX);
+        const cx = w * 0.5;
+        const cy = h * (isPortrait ? 0.45 : 0.435);
+        const topAngle = Math.sin(state.time * 1.1) * 0.28;
 
-        const sc = state.scatter;
+        // GPU WebGL Pass (16,000+ particles in a single draw call!)
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+        gl.disable(gl.DEPTH_TEST);
 
-        // Subtle warm ground reflection inside galaxy rings
-        const floorCenter = projectPoint(0, TREE_BASE_Y + 22, 0, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-        if (floorCenter && sc < 0.8) {
-          const rx = 250 * floorCenter.scale;
-          const ry = 68 * floorCenter.scale;
-          ctx.save();
-          ctx.translate(floorCenter.sx, floorCenter.sy);
-          ctx.scale(1, ry / rx);
-          const fGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, rx);
-          fGrad.addColorStop(0, hexToRgba(theme.accent, 0.14 * (1 - sc)));
-          fGrad.addColorStop(0.55, hexToRgba(theme.accent, 0.04 * (1 - sc)));
-          fGrad.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = fGrad;
-          ctx.beginPath();
-          ctx.arc(0, 0, rx, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
+        gl.uniform1f(loc.uTime, state.time);
+        gl.uniform1f(loc.uScatter, state.scatter);
+        gl.uniform1f(loc.uRotY, state.rotY);
+        gl.uniform1f(loc.uRotX, state.rotX);
+        gl.uniform1f(loc.uTopRotY, topAngle);
+        gl.uniform1f(loc.uFov, fov);
+        gl.uniform1f(loc.uCamDist, camDist);
+        gl.uniform2f(loc.uResolution, w, h);
+        gl.uniform2f(loc.uCenter, cx, cy);
+        gl.uniform1f(loc.uDpr, state.dpr);
 
-        // 3. Milky Way Galaxy Floor Rings
-        const ringAlphaFactor = 1 - sc * 0.65;
-        for (let i = 0; i < ringParticles.length; i++) {
-          const rp = ringParticles[i];
-          rp.angle += rp.speed * dt;
-          const waveY = rp.y + Math.sin(state.time * 1.8 + rp.phase) * 2.5;
-          const x = Math.cos(rp.angle) * rp.radius * (1 + sc * 0.5);
-          const z = Math.sin(rp.angle) * rp.radius * (1 + sc * 0.5);
-          const p = projectPoint(x, waveY, z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-          if (!p) continue;
-          const depthAtten = Math.max(0.4, Math.min(1.15, (camDist + 220 - p.depth) / 420));
-          const twinkle = 0.6 + 0.4 * Math.sin(state.time * 2.5 + rp.phase);
-          const sz = rp.size * p.scale * 2.3;
-          if (sz < 0.5) continue;
-          const sprite = getPinpointSprite(rp.color);
-          ctx.globalAlpha = Math.min(1, rp.alpha * twinkle * ringAlphaFactor * depthAtten);
-          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
-        }
+        gl.drawArrays(gl.POINTS, 0, particleCount);
 
-        // 3.5 Delicate Faint Silk Trail + Traveling Comet Sparks along Spiral Ribbons
-        if (sc < 0.45) {
-          const ribAlpha = 1 - sc / 0.45;
-          for (let sIdx = 0; sIdx < ribbonCurves.length; sIdx++) {
-            const curve = ribbonCurves[sIdx];
-            ctx.beginPath();
-            let started = false;
-            for (let i = 0; i < curve.length; i++) {
-              const pt = curve[i];
-              const p = projectPoint(pt.x, pt.y, pt.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-              if (!p) { started = false; continue; }
-              if (!started) { ctx.moveTo(p.sx, p.sy); started = true; }
-              else ctx.lineTo(p.sx, p.sy);
-            }
-            ctx.save();
-            ctx.globalAlpha = ribAlpha * 0.75;
-            ctx.strokeStyle = theme.ribbonGlow;
-            ctx.lineWidth = 2.2 * state.zoom;
-            ctx.stroke();
-            ctx.restore();
+        // Lightweight 2D Overlay Pass (ONLY if Polaroid photos or click bursts are active)
+        if (photoFrames.length > 0 || bursts.length > 0) {
+          ovCtx.clearRect(0, 0, w, h);
+          const sc = state.scatter;
+          const swirl = sc * 2.2;
+          const swSin = Math.sin(swirl), swCos = Math.cos(swirl);
+          const sinY = Math.sin(state.rotY), cosY = Math.cos(state.rotY);
+          const sinX = Math.sin(state.rotX), cosX = Math.cos(state.rotX);
 
-            // Subtle bright stardust comets gliding up the spiral
-            const cometCount = 4;
-            for (let c = 0; c < cometCount; c++) {
-              const u = (((c / cometCount) - state.time * 0.09) % 1 + 1) % 1;
-              const idxF = u * (curve.length - 1);
-              const i0 = Math.floor(idxF);
-              const i1 = Math.min(curve.length - 1, i0 + 1);
-              const f = idxF - i0;
-              const pt = {
-                x: curve[i0].x + (curve[i1].x - curve[i0].x) * f,
-                y: curve[i0].y + (curve[i1].y - curve[i0].y) * f,
-                z: curve[i0].z + (curve[i1].z - curve[i0].z) * f
-              };
-              const p = projectPoint(pt.x, pt.y, pt.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-              if (p) {
-                const sz = 18 * p.scale;
-                const sp = getOrbSprite('#ffffff');
-                ctx.globalAlpha = ribAlpha * 0.85;
-                ctx.drawImage(sp, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
+          if (photoFrames.length > 0) {
+            ovCtx.globalCompositeOperation = 'source-over';
+            const projectedFrames = [];
+            for (let i = 0; i < photoFrames.length; i++) {
+              const pf = photoFrames[i];
+              if (!pf.img.complete || pf.img.naturalWidth === 0) { pf.screenRect = null; continue; }
+              let px = pf.tx + (pf.sx - pf.tx) * sc;
+              let py = pf.ty + (pf.sy - pf.ty) * sc;
+              let pz = pf.tz + (pf.sz - pf.tz) * sc;
+              if (sc > 0.01) {
+                const nx = px * swCos - pz * swSin;
+                const nz = px * swSin + pz * swCos;
+                px = nx; pz = nz;
               }
+              const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
+              if (p) projectedFrames.push({ pf, p });
+              else pf.screenRect = null;
+            }
+
+            projectedFrames.sort((a, b) => b.p.depth - a.p.depth);
+            const theme = THEMES[currentThemeKey];
+            for (let i = 0; i < projectedFrames.length; i++) {
+              const { pf, p } = projectedFrames[i];
+              const cardW = (34 + sc * 18) * p.scale;
+              const cardH = cardW * 1.2;
+              const pad = cardW * 0.09;
+              pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
+
+              ovCtx.save();
+              ovCtx.translate(p.sx, p.sy);
+              ovCtx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.04);
+              ovCtx.globalAlpha = 0.96;
+              ovCtx.shadowColor = hexToRgba(theme.accent, 0.55);
+              ovCtx.shadowBlur = 12 * p.scale;
+              ovCtx.fillStyle = '#fcfaf5';
+              ovCtx.fillRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
+              ovCtx.shadowBlur = 0;
+              const imgW = cardW - pad * 2;
+              const imgH = cardH - pad * 3.1;
+              ovCtx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
+              ovCtx.restore();
             }
           }
-        }
 
-        // 4. Pure Luminous Tree Stardust + Fairy Light Orbs (depth-attenuated 3D glow!)
-        const swirl = sc * 1.65;
-        const swSin = Math.sin(swirl);
-        const swCos = Math.cos(swirl);
-
-        for (let i = 0; i < treeParticles.length; i++) {
-          const tp = treeParticles[i];
-          let px = tp.tx + (tp.sx - tp.tx) * sc;
-          let py = tp.ty + (tp.sy - tp.ty) * sc;
-          let pz = tp.tz + (tp.sz - tp.tz) * sc;
-
-          if (sc > 0.01) {
-            const nx = px * swCos - pz * swSin;
-            const nz = px * swSin + pz * swCos;
-            px = nx;
-            pz = nz;
-          }
-
-          const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-          if (!p) continue;
-
-          const depthAtten = Math.max(0.42, Math.min(1.18, (camDist + 140 - p.depth) / 280));
-          const twinkle = 0.62 + 0.38 * Math.sin(state.time * tp.twinkleSpeed + tp.phase);
-          const sz = tp.size * p.scale * (tp.kind === 'orb' ? 1.85 : 2.35);
-          if (sz < 0.5) continue;
-
-          const sprite = tp.kind === 'orb' ? getOrbSprite(tp.color) : getPinpointSprite(tp.color);
-          ctx.globalAlpha = Math.min(1, tp.baseAlpha * twinkle * depthAtten);
-          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
-        }
-
-        // 4.5 Polaroid Photo Frames
-        if (photoFrames.length > 0) {
-          ctx.globalCompositeOperation = 'source-over';
-          const projectedFrames = [];
-          for (let i = 0; i < photoFrames.length; i++) {
-            const pf = photoFrames[i];
-            if (!pf.img.complete || pf.img.naturalWidth === 0) { pf.screenRect = null; continue; }
-            let px = pf.tx + (pf.sx - pf.tx) * sc;
-            let py = pf.ty + (pf.sy - pf.ty) * sc;
-            let pz = pf.tz + (pf.sz - pf.tz) * sc;
-            if (sc > 0.01) {
-              const nx = px * swCos - pz * swSin;
-              const nz = px * swSin + pz * swCos;
-              px = nx;
-              pz = nz;
-            }
-            const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-            if (!p) { pf.screenRect = null; continue; }
-            projectedFrames.push({ pf, p });
-          }
-
-          projectedFrames.sort((a, b) => b.p.depth - a.p.depth);
-          for (let i = 0; i < projectedFrames.length; i++) {
-            const { pf, p } = projectedFrames[i];
-            const cardW = (34 + sc * 18) * p.scale;
-            const cardH = cardW * 1.2;
-            const pad = cardW * 0.09;
-            pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
-
-            ctx.save();
-            ctx.translate(p.sx, p.sy);
-            ctx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.04);
-            ctx.globalAlpha = 0.96;
-            ctx.shadowColor = hexToRgba(theme.accent, 0.55);
-            ctx.shadowBlur = 12 * p.scale;
-            ctx.fillStyle = '#fcfaf5';
-            ctx.fillRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
-            ctx.shadowBlur = 0;
-
-            const imgW = cardW - pad * 2;
-            const imgH = cardH - pad * 3.1;
-            ctx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
-            ctx.restore();
-          }
-          ctx.globalCompositeOperation = 'lighter';
-        }
-
-        // 5. Tree Topper
-        const topAngle = Math.sin(state.time * 1.1) * 0.28 * (1 - sc) + state.rotY * sc;
-        const topSinY = Math.sin(topAngle);
-        const topCosY = Math.cos(topAngle);
-
-        for (let i = 0; i < topperParticles.length; i++) {
-          const tp = topperParticles[i];
-          const px = tp.tx + (tp.sx - tp.tx) * sc;
-          const py = tp.ty + (tp.sy - tp.ty) * sc;
-          const pz = tp.tz + (tp.sz - tp.tz) * sc;
-          const p = projectPoint(px, py, pz, topSinY, topCosY, sinX, cosX, fov, camDist, cx, cy);
-          if (!p) continue;
-          const tw = 0.76 + 0.24 * Math.sin(state.time * 4 + tp.phase);
-          const sz = tp.size * p.scale * 2.1;
-          const sprite = getPinpointSprite(theme.topperGlow);
-          ctx.globalAlpha = tw * (topperMode === 'heart' ? 0.9 : 0.96);
-          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
-        }
-
-        if (sc < 0.7) {
-          const topCenter = projectPoint(0, TREE_TOP_Y - 24, 0, topSinY, topCosY, sinX, cosX, fov, camDist, cx, cy);
-          if (topCenter) {
-            const pulse = 0.88 + 0.14 * Math.sin(state.time * 3.2);
-            const flareSize = (topperMode === 'heart' ? 68 : 88) * topCenter.scale * pulse * (1 - sc);
-            const coreSprite = getOrbSprite(theme.topperGlow);
-            ctx.globalAlpha = (topperMode === 'heart' ? 0.36 : 0.75) * (1 - sc);
-            ctx.drawImage(coreSprite, topCenter.sx - flareSize * 0.5, topCenter.sy - flareSize * 0.5, flareSize, flareSize);
-
-            if (topperMode === 'star') {
-              ctx.save();
-              ctx.translate(topCenter.sx, topCenter.sy);
-              ctx.globalAlpha = 0.54 * (1 - sc) * pulse;
-              const rayLen = 48 * topCenter.scale * pulse;
-              const rayGradH = ctx.createLinearGradient(-rayLen, 0, rayLen, 0);
-              rayGradH.addColorStop(0, 'rgba(255,255,255,0)');
-              rayGradH.addColorStop(0.5, '#ffffff');
-              rayGradH.addColorStop(1, 'rgba(255,255,255,0)');
-              ctx.fillStyle = rayGradH;
-              ctx.fillRect(-rayLen, -1.1, rayLen * 2, 2.2);
-
-              const rayGradV = ctx.createLinearGradient(0, -rayLen, 0, rayLen);
-              rayGradV.addColorStop(0, 'rgba(255,255,255,0)');
-              rayGradV.addColorStop(0.5, '#ffffff');
-              rayGradV.addColorStop(1, 'rgba(255,255,255,0)');
-              ctx.fillStyle = rayGradV;
-              ctx.fillRect(-1.1, -rayLen, 2.2, rayLen * 2);
-              ctx.restore();
+          if (bursts.length > 0) {
+            ovCtx.globalCompositeOperation = 'lighter';
+            for (let i = bursts.length - 1; i >= 0; i--) {
+              const b = bursts[i];
+              b.life -= b.decay * dt;
+              if (b.life <= 0) { bursts.splice(i, 1); continue; }
+              b.x += b.vx * dt;
+              b.y += b.vy * dt;
+              b.vx *= 0.95;
+              b.vy = b.vy * 0.95 + 40 * dt;
+              ovCtx.globalAlpha = b.life;
+              ovCtx.fillStyle = b.color;
+              ovCtx.beginPath();
+              ovCtx.arc(b.x, b.y, b.size * b.life, 0, Math.PI * 2);
+              ovCtx.fill();
             }
           }
+        } else {
+          ovCtx.clearRect(0, 0, w, h);
         }
-
-        // 6. Rising Stardust
-        const emberSprite = getPinpointSprite(theme.accent);
-        for (let i = 0; i < emberParticles.length; i++) {
-          const ep = emberParticles[i];
-          ep.y -= ep.vy * dt;
-          ep.x += Math.sin(state.time * 1.6 + ep.phase) * 10 * dt;
-          if (ep.y < -280) ep.y = 240;
-          const p = projectPoint(ep.x, ep.y, ep.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-          if (!p) continue;
-          const sz = ep.size * p.scale * 2.1;
-          ctx.globalAlpha = ep.alpha * (0.5 + 0.5 * Math.sin(state.time * 3 + ep.phase));
-          ctx.drawImage(emberSprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
-        }
-
-        // 7. Falling Snow
-        const snowSprite = getPinpointSprite('#d8eeff');
-        for (let i = 0; i < snowParticles.length; i++) {
-          const sp = snowParticles[i];
-          sp.y += sp.vy * dt;
-          sp.x += (sp.vx + Math.sin(state.time * 1.2 + sp.swayPhase) * 14) * dt;
-          if (sp.y > 330) {
-            sp.y = -430;
-            sp.x = rand(-540, 540);
-            sp.z = rand(-430, 430);
-          }
-          const p = projectPoint(sp.x, sp.y, sp.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-          if (!p) continue;
-          const sz = sp.size * p.scale * 2.2;
-          if (sz < 0.6) continue;
-          ctx.globalAlpha = sp.alpha;
-          ctx.drawImage(snowSprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
-        }
-
-        // 8. Click Sparkle Bursts
-        for (let i = bursts.length - 1; i >= 0; i--) {
-          const b = bursts[i];
-          b.life -= b.decay * dt;
-          if (b.life <= 0) { bursts.splice(i, 1); continue; }
-          b.x += b.vx * dt;
-          b.y += b.vy * dt;
-          b.vx *= 0.96;
-          b.vy = b.vy * 0.96 + 35 * dt;
-          const sprite = getOrbSprite(b.color);
-          const sz = b.size * b.life * 2;
-          ctx.globalAlpha = b.life;
-          ctx.drawImage(sprite, b.x - sz * 0.5, b.y - sz * 0.5, sz, sz);
-        }
-
-        ctx.globalAlpha = 1;
       }
 
       let lastFrameTime = performance.now();
@@ -1422,6 +1357,7 @@
         currentThemeKey = themeKey;
         const theme = THEMES[themeKey];
         document.documentElement.style.setProperty('--accent', theme.accent);
+        document.documentElement.style.setProperty('--bg-css', theme.bgCss);
         const titleEl = document.getElementById('titleDisplay');
         titleEl.style.color = theme.titleColor;
         titleEl.style.textShadow = `0 0 16px ${theme.titleGlow}, 0 0 44px ${hexToRgba(theme.accent, 0.45)}`;
@@ -1432,18 +1368,19 @@
         document.querySelectorAll('[data-dock-theme]').forEach(btn => {
           btn.classList.toggle('active', btn.dataset.dockTheme === themeKey);
         });
-        buildParticles();
+        buildGPUData();
       }
 
       let activePointers = new Map();
       let lastPinchDist = 0;
 
-      canvas.addEventListener('pointerdown', (e) => {
-        canvas.setPointerCapture(e.pointerId);
+      ovCanvas.addEventListener('pointerdown', (e) => {
+        ovCanvas.setPointerCapture(e.pointerId);
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (activePointers.size === 1) {
           state.isDragging = true;
           state.dragMoved = 0;
+          state.velY = 0;
           state.lastX = e.clientX;
           state.lastY = e.clientY;
         } else if (activePointers.size === 2) {
@@ -1453,7 +1390,7 @@
         spawnBurst(e.clientX, e.clientY);
       });
 
-      canvas.addEventListener('pointermove', (e) => {
+      ovCanvas.addEventListener('pointermove', (e) => {
         if (!activePointers.has(e.pointerId)) return;
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (activePointers.size === 1 && state.isDragging) {
@@ -1461,6 +1398,7 @@
           const dy = e.clientY - state.lastY;
           state.dragMoved += Math.abs(dx) + Math.abs(dy);
           state.targetRotY += dx * 0.0065;
+          state.velY = dx * 0.0028;
           state.targetRotX = Math.max(-0.45, Math.min(0.65, state.targetRotX + dy * 0.0045));
           state.lastX = e.clientX;
           state.lastY = e.clientY;
@@ -1488,15 +1426,15 @@
         if (activePointers.size < 2) lastPinchDist = 0;
         if (activePointers.size === 0) state.isDragging = false;
       }
-      canvas.addEventListener('pointerup', onPointerEnd);
-      canvas.addEventListener('pointercancel', onPointerEnd);
+      ovCanvas.addEventListener('pointerup', onPointerEnd);
+      ovCanvas.addEventListener('pointercancel', onPointerEnd);
 
-      canvas.addEventListener('wheel', (e) => {
+      ovCanvas.addEventListener('wheel', (e) => {
         e.preventDefault();
         state.targetZoom = Math.max(0.55, Math.min(2.1, state.targetZoom - e.deltaY * 0.001));
       }, { passive: false });
 
-      canvas.addEventListener('dblclick', toggleScatter);
+      ovCanvas.addEventListener('dblclick', toggleScatter);
 
       function setScatter(on) {
         state.targetScatter = on ? 1 : 0;
@@ -1504,23 +1442,16 @@
         document.getElementById('dockScatter').classList.toggle('active', on);
       }
 
-      function toggleScatter() {
-        setScatter(!(state.targetScatter > 0.5));
-      }
+      function toggleScatter() { setScatter(!(state.targetScatter > 0.5)); }
 
       document.getElementById('btnScatter').addEventListener('click', toggleScatter);
       document.getElementById('dockScatter').addEventListener('click', toggleScatter);
 
       window.addEventListener('keydown', (e) => {
         if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
-        if (e.code === 'Space') {
-          e.preventDefault();
-          toggleScatter();
-        } else if (e.key === 'h' || e.key === 'H') {
-          toggleZenMode();
-        } else if (e.key === 'Escape') {
-          photoModal.classList.remove('show');
-        }
+        if (e.code === 'Space') { e.preventDefault(); toggleScatter(); }
+        else if (e.key === 'h' || e.key === 'H') toggleZenMode();
+        else if (e.key === 'Escape') photoModal.classList.remove('show');
       });
 
       document.querySelectorAll('.theme-chip').forEach(btn => {
@@ -1541,7 +1472,7 @@
         btnTopHeart.classList.toggle('active', mode === 'heart');
         dockStar.classList.toggle('active', mode === 'star');
         dockHeart.classList.toggle('active', mode === 'heart');
-        buildTopperParticles();
+        buildGPUData();
       }
       btnTopStar.addEventListener('click', () => setTopper('star'));
       btnTopHeart.addEventListener('click', () => setTopper('heart'));
@@ -1619,6 +1550,7 @@
       document.getElementById('btnResetView').addEventListener('click', () => {
         state.targetRotX = 0.13;
         state.targetZoom = 1;
+        state.velY = 0;
         setScatter(false);
       });
 
@@ -1630,7 +1562,6 @@
         url.searchParams.set('title', inputTitle.value);
         url.searchParams.set('sub', inputSub.value);
         url.searchParams.set('sign', inputSign.value);
-
         try {
           await navigator.clipboard.writeText(url.toString());
           showToast('Share link copied!');
@@ -1640,11 +1571,7 @@
       });
 
       // ==================== Music Box ====================
-      let audioCtx = null;
-      let musicPlaying = false;
-      let musicTimer = null;
-      let noteIndex = 0;
-
+      let audioCtx = null, musicPlaying = false, musicTimer = null, noteIndex = 0;
       const MELODY = [
         [392, 1], [523.25, 1], [523.25, 0.5], [587.33, 0.5], [523.25, 0.5], [493.88, 0.5],
         [440, 1], [440, 1], [440, 1],
@@ -1661,30 +1588,17 @@
       function playBellNote(freq, durSec) {
         if (!audioCtx || freq <= 0) return;
         const now = audioCtx.currentTime;
-        const osc1 = audioCtx.createOscillator();
-        const osc2 = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        const g2 = audioCtx.createGain();
-
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(freq, now);
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(freq * 2, now);
+        const osc1 = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain(), g2 = audioCtx.createGain();
+        osc1.type = 'sine'; osc1.frequency.setValueAtTime(freq, now);
+        osc2.type = 'triangle'; osc2.frequency.setValueAtTime(freq * 2, now);
         g2.gain.setValueAtTime(0.18, now);
-
         gain.gain.setValueAtTime(0.001, now);
         gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.0008, now + durSec * 1.45);
-
-        osc1.connect(gain);
-        osc2.connect(g2);
-        g2.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc1.start(now);
-        osc2.start(now);
-        osc1.stop(now + durSec * 1.5);
-        osc2.stop(now + durSec * 1.5);
+        osc1.connect(gain); osc2.connect(g2); g2.connect(gain); gain.connect(audioCtx.destination);
+        osc1.start(now); osc2.start(now);
+        osc1.stop(now + durSec * 1.5); osc2.stop(now + durSec * 1.5);
       }
 
       function scheduleNextNote() {
@@ -1719,20 +1633,13 @@
       const camVideo = document.getElementById('camVideo');
       const camOverlay = document.getElementById('camOverlay');
       const camCtx = camOverlay.getContext('2d');
-
-      let mpLoaded = false;
-      let camStream = null;
-      let handsInstance = null;
-      let gestureLoopId = null;
+      let mpLoaded = false, camStream = null, handsInstance = null, gestureLoopId = null;
       let mpCdnBase = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands';
 
       function loadScript(src) {
         return new Promise((resolve, reject) => {
           const s = document.createElement('script');
-          s.src = src;
-          s.crossOrigin = 'anonymous';
-          s.onload = resolve;
-          s.onerror = reject;
+          s.src = src; s.crossOrigin = 'anonymous'; s.onload = resolve; s.onerror = reject;
           document.head.appendChild(s);
         });
       }
@@ -1744,62 +1651,36 @@
           'https://unpkg.com/@mediapipe/hands'
         ];
         for (const base of bases) {
-          try {
-            await loadScript(`${base}/hands.js`);
-            mpCdnBase = base;
-            return;
-          } catch {}
+          try { await loadScript(`${base}/hands.js`); mpCdnBase = base; return; } catch {}
         }
         throw new Error('All MediaPipe CDNs failed');
       }
 
       async function startGestureControl() {
-        if (state.gestureActive) {
-          stopGestureControl();
-          return;
-        }
+        if (state.gestureActive) { stopGestureControl(); return; }
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           showToast('Camera unavailable here. Use HTTPS or localhost.', 3500);
           return;
         }
-
         gestureBox.classList.add('show');
         btnGesture.classList.add('active');
         gestureStatus.textContent = 'Loading hand tracking...';
-
         try {
-          if (!mpLoaded) {
-            await loadMediaPipeWithFallback();
-            mpLoaded = true;
-          }
-
-          camStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: 320, height: 240 },
-            audio: false
-          });
+          if (!mpLoaded) { await loadMediaPipeWithFallback(); mpLoaded = true; }
+          camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
           camVideo.srcObject = camStream;
           await camVideo.play();
           camOverlay.width = camVideo.videoWidth || 320;
           camOverlay.height = camVideo.videoHeight || 240;
 
-          handsInstance = new window.Hands({
-            locateFile: (file) => `${mpCdnBase}/${file}`
-          });
-          handsInstance.setOptions({
-            maxNumHands: 1,
-            modelComplexity: 0,
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.55
-          });
+          handsInstance = new window.Hands({ locateFile: (file) => `${mpCdnBase}/${file}` });
+          handsInstance.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.55 });
           handsInstance.onResults(onHandResults);
           state.gestureActive = true;
           gestureStatus.textContent = 'Open Palm: Nebula · Fist: Tree';
-
           const processFrame = async () => {
             if (!state.gestureActive) return;
-            if (camVideo.readyState >= 2) {
-              await handsInstance.send({ image: camVideo });
-            }
+            if (camVideo.readyState >= 2) await handsInstance.send({ image: camVideo });
             gestureLoopId = requestAnimationFrame(processFrame);
           };
           processFrame();
@@ -1813,29 +1694,19 @@
       function onHandResults(results) {
         camCtx.clearRect(0, 0, camOverlay.width, camOverlay.height);
         camCtx.drawImage(results.image, 0, 0, camOverlay.width, camOverlay.height);
-
         if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-          state.handRotBias = 0;
-          gestureStatus.textContent = 'Show your hand...';
-          return;
+          state.handRotBias = 0; gestureStatus.textContent = 'Show your hand...'; return;
         }
-
         const lm = results.multiHandLandmarks[0];
         camCtx.fillStyle = '#ffd88a';
         for (let i = 0; i < lm.length; i++) {
-          camCtx.beginPath();
-          camCtx.arc(lm[i].x * camOverlay.width, lm[i].y * camOverlay.height, 2.5, 0, Math.PI * 2);
-          camCtx.fill();
+          camCtx.beginPath(); camCtx.arc(lm[i].x * camOverlay.width, lm[i].y * camOverlay.height, 2.5, 0, Math.PI * 2); camCtx.fill();
         }
-
-        const wrist = lm[0];
-        const midMcp = lm[9];
+        const wrist = lm[0], midMcp = lm[9];
         const palmSize = Math.hypot(midMcp.x - wrist.x, midMcp.y - wrist.y) + 1e-5;
         const tips = [4, 8, 12, 16, 20];
         let avgTipDist = 0;
-        for (const idx of tips) {
-          avgTipDist += Math.hypot(lm[idx].x - wrist.x, lm[idx].y - wrist.y);
-        }
+        for (const idx of tips) avgTipDist += Math.hypot(lm[idx].x - wrist.x, lm[idx].y - wrist.y);
         avgTipDist /= tips.length;
         const openness = avgTipDist / palmSize;
 
@@ -1847,28 +1718,21 @@
           gestureStatus.textContent = '👌 Photo Zoom';
           return;
         }
-
         const mappedScatter = Math.max(0, Math.min(1, (openness - 1.15) / 0.68));
         state.targetScatter = mappedScatter;
         document.getElementById('btnScatter').classList.toggle('active', mappedScatter > 0.5);
         document.getElementById('dockScatter').classList.toggle('active', mappedScatter > 0.5);
         state.handRotBias = (0.5 - lm[9].x) * 2.4;
-
         gestureStatus.textContent = mappedScatter > 0.55 ? '🖐️ Star Nebula' : '✊ Christmas Tree';
       }
 
       function stopGestureControl() {
-        state.gestureActive = false;
-        state.handRotBias = 0;
+        state.gestureActive = false; state.handRotBias = 0;
         cancelAnimationFrame(gestureLoopId);
-        if (camStream) {
-          camStream.getTracks().forEach(t => t.stop());
-          camStream = null;
-        }
+        if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
         gestureBox.classList.remove('show');
         btnGesture.classList.remove('active');
       }
-
       btnGesture.addEventListener('click', startGestureControl);
 
       window.__treeDemo = {
