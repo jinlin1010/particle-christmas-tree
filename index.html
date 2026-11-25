@@ -51,8 +51,8 @@
       left: 0;
       right: 0;
       bottom: 0;
-      height: 22%;
-      background: linear-gradient(to top, rgba(2, 3, 8, 0.82) 0%, rgba(2, 3, 8, 0.34) 55%, rgba(2, 3, 8, 0) 100%);
+      height: 28%;
+      background: linear-gradient(to top, rgba(2, 3, 8, 0.96) 0%, rgba(2, 3, 8, 0.72) 44%, rgba(2, 3, 8, 0) 100%);
       pointer-events: none;
       z-index: 5;
     }
@@ -61,7 +61,7 @@
       position: fixed;
       left: 0;
       right: 0;
-      bottom: 3.4%;
+      bottom: 4.0%;
       pointer-events: none;
       text-align: center;
       padding: 0 28px;
@@ -122,17 +122,12 @@
 
     .top-hint {
       position: fixed;
-      top: 16px;
-      left: 16px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      background: rgba(10, 14, 24, 0.48);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      font-size: 12px;
-      color: var(--text-sub);
-      letter-spacing: 0.04em;
+      top: 22px;
+      left: 24px;
+      padding: 4px 0;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.42);
+      letter-spacing: 0.05em;
       pointer-events: none;
       z-index: 10;
       white-space: nowrap;
@@ -208,8 +203,8 @@
 
     .controls-wrap {
       position: fixed;
-      top: 16px;
-      right: 16px;
+      top: max(20px, env(safe-area-inset-top));
+      right: max(22px, env(safe-area-inset-right));
       z-index: 20;
       display: flex;
       flex-direction: column;
@@ -219,46 +214,47 @@
 
     .toolbar-btns {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       justify-content: flex-end;
     }
 
     .pill-btn {
       appearance: none;
-      border: 1px solid var(--panel-border);
-      background: var(--panel-bg);
-      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(10, 14, 24, 0.42);
+      color: rgba(255, 255, 255, 0.82);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-radius: 999px;
-      padding: 8px 13px;
-      font-size: 13px;
+      padding: 6px 11px;
+      font-size: 12px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      transition: all 0.22s ease;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+      gap: 4px;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     }
 
     .pill-btn:hover {
-      background: rgba(255, 255, 255, 0.14);
-      border-color: rgba(255, 255, 255, 0.3);
-      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.26);
+      color: #ffffff;
     }
 
     .pill-btn.active {
-      background: rgba(255, 216, 138, 0.22);
-      border-color: rgba(255, 216, 138, 0.65);
-      color: #ffe8b8;
+      background: rgba(255, 255, 255, 0.13);
+      border-color: rgba(255, 216, 138, 0.42);
+      color: #f6e6c4;
     }
 
+    .mobile-quick-actions { display: none; }
+
     .panel {
-      width: 292px;
+      width: 266px;
       max-height: calc(100vh - 82px);
       overflow-y: auto;
-      padding: 16px;
+      padding: 14px;
       border-radius: 16px;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
@@ -474,7 +470,11 @@
 
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    @media (max-width: 640px) {
+    @media (max-width: 680px) {
+      .controls-wrap { top: max(22px, env(safe-area-inset-top)); right: 16px; }
+      .toolbar-btns .mob-secondary { display: none; }
+      .mobile-quick-actions { display: block; }
+      .greeting-overlay { bottom: 6.8%; }
       .panel { width: calc(100vw - 32px); max-width: 310px; }
       .gesture-box { width: 124px; }
     }
@@ -514,17 +514,26 @@
 
   <div class="controls-wrap">
     <div class="toolbar-btns">
-      <button class="pill-btn hide-in-zen" id="btnReplay" title="Replay Opening Animation">🎬 Replay</button>
+      <button class="pill-btn hide-in-zen mob-secondary" id="btnReplay" title="Replay Opening Animation">🎬 Replay</button>
       <button class="pill-btn hide-in-zen" id="btnScatter" title="Scatter / Gather Particles">✨ Scatter</button>
       <button class="pill-btn hide-in-zen active" id="btnFireworks" title="Toggle Festive Fireworks">🎆 Fireworks</button>
-      <button class="pill-btn hide-in-zen" id="btnPhotos" title="Hang Polaroid Photos on Tree">📷 Photos</button>
-      <button class="pill-btn hide-in-zen" id="btnMusic" title="Play Christmas Music Box">🎵 Music</button>
-      <button class="pill-btn hide-in-zen" id="btnGesture" title="Hand Gesture Control">🖐️ Gesture</button>
+      <button class="pill-btn hide-in-zen mob-secondary" id="btnPhotos" title="Hang Polaroid Photos on Tree">📷 Photos</button>
+      <button class="pill-btn hide-in-zen mob-secondary" id="btnMusic" title="Play Christmas Music Box">🎵 Music</button>
+      <button class="pill-btn hide-in-zen mob-secondary" id="btnGesture" title="Hand Gesture Control">🖐️ Gesture</button>
       <button class="pill-btn hide-in-zen" id="btnTogglePanel" title="Customize Theme & Text">🎨 Style</button>
       <button class="pill-btn" id="btnZen" title="Hide UI for Clean Recording (H)">👁️</button>
     </div>
 
     <div class="panel hidden" id="controlPanel">
+      <div class="mobile-quick-actions">
+        <div class="section-label">Quick Actions</div>
+        <div class="row-btns">
+          <button class="mini-btn" id="mobReplay">🎬 Replay</button>
+          <button class="mini-btn" id="mobMusic">🎵 Music</button>
+          <button class="mini-btn" id="mobGesture">🖐️ Gesture</button>
+        </div>
+      </div>
+
       <div>
         <div class="section-label">Color Theme</div>
         <div class="theme-grid">
@@ -623,7 +632,7 @@
       const THEMES = {
         gold: {
           name: 'Champagne Gold',
-          bgCss: 'radial-gradient(ellipse at 50% 42%, #24140a 0%, #0d0812 52%, #020308 100%)',
+          bgCss: 'radial-gradient(circle at 50% 41%, #1b100b 0%, #100910 38%, #07050d 72%, #020308 100%)',
           titleColor: '#fff7e6',
           titleGlow: 'rgba(255, 210, 122, 0.85)',
           treeColors: ['#fff8e6', '#ffe08a', '#ffc152', '#f29530', '#ffe9ad'],
@@ -636,7 +645,7 @@
         },
         pink: {
           name: 'Rose Pink',
-          bgCss: 'radial-gradient(ellipse at 50% 42%, #2a0b26 0%, #12061c 52%, #03020a 100%)',
+          bgCss: 'radial-gradient(circle at 50% 41%, #200a1f 0%, #130719 38%, #090411 72%, #03020a 100%)',
           titleColor: '#fff0f7',
           titleGlow: 'rgba(255, 138, 200, 0.88)',
           treeColors: ['#fff2f9', '#ffc4e4', '#ff84c8', '#dc68ff', '#b285ff'],
@@ -649,7 +658,7 @@
         },
         cyber: {
           name: 'Cyber Blue',
-          bgCss: 'radial-gradient(ellipse at 50% 42%, #0a2444 0%, #050f22 52%, #01040b 100%)',
+          bgCss: 'radial-gradient(circle at 50% 41%, #091d38 0%, #061326 38%, #030916 72%, #01040b 100%)',
           titleColor: '#eefaff',
           titleGlow: 'rgba(118, 224, 255, 0.86)',
           treeColors: ['#ffffff', '#c7f6ff', '#6ee4ff', '#3bb2ff', '#86a2ff'],
@@ -662,7 +671,7 @@
         },
         aurora: {
           name: 'Aurora Night',
-          bgCss: 'radial-gradient(ellipse at 50% 42%, #092a2c 0%, #051322 52%, #01040a 100%)',
+          bgCss: 'radial-gradient(circle at 50% 41%, #082224 0%, #05161f 38%, #030c14 72%, #01040a 100%)',
           titleColor: '#effff8',
           titleGlow: 'rgba(110, 255, 184, 0.84)',
           treeColors: ['#f2fff8', '#a6ffd9', '#42f0b4', '#40c2ff', '#a28cff'],
@@ -675,15 +684,33 @@
         }
       };
 
-      // Real Fireworks Palettes (Warm Beach Gold, Crimson-Gold, Neon Sky, Pastel Rose, Emerald-Gold)
-      const FIREWORK_PALETTES = [
-        { primary: '#ffd478', secondary: '#ff8e3c', glow: '#ffb84d' }, // Classic Beach Golden Willow
-        { primary: '#ff5c8a', secondary: '#ffe08a', glow: '#ff477e' }, // Rose Crimson & Gold
-        { primary: '#5ee6ff', secondary: '#ff7ee6', glow: '#38c8ff' }, // Electric Cyan & Magenta
-        { primary: '#78ffb8', secondary: '#ffd670', glow: '#40eb9e' }, // Emerald & Champagne
-        { primary: '#b58cff', secondary: '#7ce8ff', glow: '#9866ff' }, // Violet & Ice
-        { primary: '#ff6e54', secondary: '#ffd452', glow: '#ff5238' }  // Warm Coral & Amber
-      ];
+      // Theme-harmonized firework palettes (keeps scene color world unified instead of random neon clashes)
+      const THEME_FIREWORK_PALETTES = {
+        gold: [
+          { primary: '#ffd984', secondary: '#ff9b4a', glow: '#ffc25c' },
+          { primary: '#fff1c9', secondary: '#ffd06b', glow: '#ffe094' },
+          { primary: '#ff849c', secondary: '#ffe09c', glow: '#ff6e8e' },
+          { primary: '#ffb36e', secondary: '#fff0c4', glow: '#ff9c4d' }
+        ],
+        pink: [
+          { primary: '#ff98cf', secondary: '#ffe6b8', glow: '#ff7ec4' },
+          { primary: '#ffd98e', secondary: '#ffb5dc', glow: '#ffc86e' },
+          { primary: '#d49eff', secondary: '#ffcce8', glow: '#be7dff' },
+          { primary: '#ff74aa', secondary: '#fff2dc', glow: '#ff5c96' }
+        ],
+        cyber: [
+          { primary: '#82e9ff', secondary: '#e8f9ff', glow: '#5ad9ff' },
+          { primary: '#a8b8ff', secondary: '#80ebff', glow: '#849cff' },
+          { primary: '#ffd98a', secondary: '#96eeff', glow: '#ffc462' },
+          { primary: '#d8f6ff', secondary: '#62c8ff', glow: '#9ee8ff' }
+        ],
+        aurora: [
+          { primary: '#7effcc', secondary: '#8ceaff', glow: '#56f0b4' },
+          { primary: '#ffd98a', secondary: '#88ffd4', glow: '#ffc568' },
+          { primary: '#88c8ff', secondary: '#e4fff6', glow: '#66b4ff' },
+          { primary: '#ff98ca', secondary: '#9effd8', glow: '#ff7ab8' }
+        ]
+      };
 
       const DEDICATION_PRESETS = {
         classic: {
@@ -879,10 +906,13 @@
           }
 
           float ptSize = aParams.x * scale * uDpr * (1.0 + lockFlash * 0.45);
+          if (pType > 2.5 && pType < 3.5) {
+            ptSize = min(ptSize, 13.5 * uDpr);
+          }
           if (aMeta.z > 0.5 && aMeta.z < 1.5) {
             ptSize *= (0.7 + 0.6 * max(0.0, sin(uTime * aParams.w + aParams.z)));
           }
-          gl_PointSize = clamp(ptSize, 1.0, 110.0);
+          gl_PointSize = clamp(ptSize, 1.0, 96.0);
           vAlpha = clamp((aParams.y + lockFlash * 0.3) * twinkle * depthAtten, 0.0, 1.0);
         }
       `;
@@ -898,26 +928,27 @@
           float d2 = dot(uv, uv);
           if (d2 > 0.25) discard;
 
+          float edgeFade = smoothstep(0.25, 0.04, d2);
           float intensity = 0.0;
           vec3 col = vColor;
 
           if (vShape < 0.5) {
-            float core = exp(-d2 * 58.0);
-            float halo = exp(-d2 * 10.0) * 0.68;
+            float core = exp(-d2 * 60.0);
+            float halo = exp(-d2 * 10.0) * 0.72 * edgeFade;
             intensity = core + halo;
-            col = mix(vColor * 1.2, vec3(1.0), core * 0.72);
+            col = mix(vColor * 1.24, vec3(1.0), core * 0.54);
           } else if (vShape < 1.5) {
             float d = length(uv);
             float rayH = exp(-abs(uv.y) * 34.0) * exp(-abs(uv.x) * 6.5);
             float rayV = exp(-abs(uv.x) * 34.0) * exp(-abs(uv.y) * 6.5);
             float core = exp(-d * d * 48.0);
-            intensity = core * 0.95 + (rayH + rayV) * 0.78;
-            col = mix(vColor * 1.15, vec3(1.0), clamp(core + (rayH + rayV) * 0.48, 0.0, 1.0));
+            intensity = (core * 0.95 + (rayH + rayV) * 0.78) * edgeFade;
+            col = mix(vColor * 1.18, vec3(1.0), clamp(core * 0.7 + (rayH + rayV) * 0.42, 0.0, 1.0));
           } else {
-            float core = exp(-d2 * 28.0);
-            float halo = exp(-d2 * 7.8) * 0.76;
-            intensity = core * 0.88 + halo;
-            col = mix(vColor * 1.18, vec3(1.0), core * 0.65);
+            float core = exp(-d2 * 28.0) * edgeFade;
+            float halo = exp(-d2 * 8.5) * 0.72 * edgeFade;
+            intensity = core * 0.85 + halo;
+            col = mix(vColor * 1.22, vec3(1.0), core * 0.50);
           }
 
           float a = clamp(intensity * vAlpha, 0.0, 1.0);
@@ -1155,9 +1186,9 @@
 
         // 7. Wide Milky Way Spiral Galaxy Base (5,200 particles)
         const rings = [
-          { rMin: 168, rMax: 222, count: 1850, speed: 0.24 },
-          { rMin: 234, rMax: 298, count: 1750, speed: -0.17 },
-          { rMin: 310, rMax: 382, count: 1600, speed: 0.11 }
+          { rMin: 164, rMax: 212, count: 1850, speed: 0.24 },
+          { rMin: 222, rMax: 280, count: 1750, speed: -0.17 },
+          { rMin: 290, rMax: 348, count: 1600, speed: 0.11 }
         ];
         rings.forEach((ring, rIdx) => {
           for (let i = 0; i < ring.count; i++) {
@@ -1174,9 +1205,9 @@
           }
         });
 
-        // 8. Falling 3D Snow (550) + Rising Stardust Embers (160)
-        for (let i = 0; i < 550; i++) {
-          pushPt(rand(-640, 640), rand(-440, 340), rand(-480, 480), 0, 0, 0, '#e0f2ff', rand(4.8, 11.2), rand(0.28, 0.78), rand(0, 6.28), rand(1.0, 2.2), 3, rand(20, 52), 2, 0);
+        // 8. Falling 3D Snow (520, depth-clamped for delicate bokeh) + Rising Stardust Embers (160)
+        for (let i = 0; i < 520; i++) {
+          pushPt(rand(-640, 640), rand(-440, 340), rand(-230, 320), 0, 0, 0, '#e0f2ff', rand(2.8, 5.8), rand(0.24, 0.68), rand(0, 6.28), rand(1.0, 2.2), 3, rand(20, 48), 2, 0);
         }
         for (let i = 0; i < 160; i++) {
           const r = rand(35, 260), ang = Math.random() * Math.PI * 2;
@@ -1189,20 +1220,21 @@
         gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
       }
 
-      // ==================== 8-Style Randomized Stardust Fireworks (Balanced Scale, Zero Burn-In) ====================
+      // ==================== 8-Style Non-Overlapping Sky Fireworks (Spatial Zone Guard + Zero Burn-In) ====================
       const fwShells = [];
       const fwSparks = [];
       const fwFlashes = [];
-      let fwTimer = 1.3;
+      const fwActiveBursts = [];
+      let fwTimer = 1.4;
 
       const ALL_FW_TYPES = [
         'willow',
         'peony',
-        'saturn',
+        'chrysanthemum',
         'heartShell',
         'starShell',
         'cracklePalm',
-        'spiralWheel',
+        'kamuro',
         'doubleHalo'
       ];
       let fwBag = [];
@@ -1218,35 +1250,86 @@
         return fwBag.pop();
       }
 
+      // 6 well-separated desktop sky zones & 4 mobile sky zones to prevent overlap or edge clipping
+      const SKY_ZONES = [
+        { xN: 0.14, yN: 0.34, layer: 'front', cooldown: 0 },
+        { xN: 0.25, yN: 0.19, layer: 'back',  cooldown: 0 },
+        { xN: 0.35, yN: 0.14, layer: 'back',  cooldown: 0 },
+        { xN: 0.65, yN: 0.15, layer: 'back',  cooldown: 0 },
+        { xN: 0.76, yN: 0.23, layer: 'back',  cooldown: 0 },
+        { xN: 0.86, yN: 0.36, layer: 'front', cooldown: 0 }
+      ];
+      const MOB_ZONES = [
+        { xN: 0.21, yN: 0.22, layer: 'back', cooldown: 0 },
+        { xN: 0.79, yN: 0.20, layer: 'back', cooldown: 0 },
+        { xN: 0.24, yN: 0.13, layer: 'back', cooldown: 0 },
+        { xN: 0.76, yN: 0.13, layer: 'back', cooldown: 0 }
+      ];
+
+      function pickNonOverlappingZone(w, h, isPortrait) {
+        const zones = isPortrait ? MOB_ZONES : SKY_ZONES;
+        const maxConcurrent = isPortrait ? 2 : 3;
+        if (fwShells.length + fwActiveBursts.length >= maxConcurrent) return null;
+
+        const minDist = isPortrait ? w * 0.44 : Math.min(w, h) * 0.36;
+        const candidates = [];
+        for (let idx = 0; idx < zones.length; idx++) {
+          if (zones[idx].cooldown > 0) continue;
+          const z = zones[idx];
+          const cx = (z.xN + rand(-0.014, 0.014)) * w;
+          const cy = (z.yN + rand(-0.012, 0.012)) * h;
+          let tooClose = false;
+          for (const s of fwShells) {
+            if (Math.hypot(s.tx - cx, s.ty - cy) < minDist) { tooClose = true; break; }
+          }
+          if (!tooClose) {
+            for (const b of fwActiveBursts) {
+              if (Math.hypot(b.x - cx, b.y - cy) < minDist) { tooClose = true; break; }
+            }
+          }
+          if (!tooClose) candidates.push({ idx, cx, cy, layer: z.layer, zones });
+        }
+
+        if (candidates.length === 0) return null;
+        const chosen = pick(candidates);
+        return chosen;
+      }
+
       function launchFirework(xScreenNorm, yScreenNorm, forcedType) {
         if (!state.fireworksEnabled) return;
         const w = state.width, h = state.height;
-        const isFront = xScreenNorm === undefined ? Math.random() < 0.22 : false;
-        const layer = isFront ? 'front' : 'back';
-        const depthScale = layer === 'front' ? rand(1.05, 1.32) : rand(0.78, 1.18);
+        const isPortrait = w < h;
 
-        let tx;
+        let tx, ty, layer;
         if (xScreenNorm !== undefined) {
           tx = xScreenNorm * w;
-        } else if (layer === 'back') {
-          tx = Math.random() < 0.5 ? w * rand(0.11, 0.36) : w * rand(0.64, 0.89);
+          ty = yScreenNorm * h;
+          layer = 'back';
         } else {
-          tx = Math.random() < 0.5 ? w * rand(0.11, 0.25) : w * rand(0.75, 0.89);
+          const picked = pickNonOverlappingZone(w, h, isPortrait);
+          if (!picked) return;
+          tx = picked.cx;
+          ty = picked.cy;
+          layer = picked.layer;
+          picked.zones[picked.idx].cooldown = 5.2;
         }
-        const ty = yScreenNorm !== undefined ? yScreenNorm * h : h * (tx > w * 0.6 ? rand(0.21, 0.39) : rand(0.15, 0.37));
 
-        const startX = tx + rand(-75, 75);
+        const depthScale = isPortrait
+          ? rand(0.68, 0.84)
+          : (layer === 'front' ? rand(0.96, 1.14) : rand(0.76, 1.04));
+        const startX = tx + rand(-55, 55);
         const startY = h * 0.92;
-        const flightTime = rand(0.58, 0.76);
+        const flightTime = rand(0.58, 0.72);
         const gRocket = 240;
         const vx = (tx - startX) / flightTime;
         const vy = (ty - startY - 0.5 * gRocket * flightTime * flightTime) / flightTime;
 
-        const palette = pick(FIREWORK_PALETTES);
+        const themePalettes = THEME_FIREWORK_PALETTES[currentThemeKey] || THEME_FIREWORK_PALETTES.gold;
+        const palette = pick(themePalettes);
         const shellType = forcedType || nextRandomFwType();
 
         fwShells.push({
-          x: startX, y: startY,
+          x: startX, y: startY, tx, ty,
           trail: [{ x: startX, y: startY }],
           vx, vy, g: gRocket,
           life: flightTime,
@@ -1266,7 +1349,7 @@
           gravity: opts.gravity ?? 105,
           life: opts.life ?? 1.0,
           decay: opts.decay ?? 0.48,
-          width: opts.width ?? 1.85,
+          width: opts.width ?? 1.75,
           maxTrail: opts.maxTrail ?? 12,
           color: opts.color,
           twinkle: !!opts.twinkle,
@@ -1281,149 +1364,125 @@
 
       function detonateShell(shell) {
         const { x, y, palette, shellType, layer, depthScale } = shell;
-        const baseScale = (Math.min(state.width, state.height) / 640) * depthScale;
-        const alphaMul = layer === 'front' ? 0.92 : (0.64 + 0.30 * Math.min(1, depthScale));
+        const baseScale = (Math.min(state.width, state.height) / 690) * depthScale;
+        const alphaMul = layer === 'front' ? 0.94 : (0.76 + 0.18 * Math.min(1, depthScale));
 
-        fwFlashes.push({ x, y, life: 1.0, radius: 135 * baseScale, color: palette.glow, layer, alphaMul });
+        fwFlashes.push({ x, y, life: 1.0, radius: 130 * baseScale, color: palette.glow, layer, alphaMul });
+        fwActiveBursts.push({ x, y, life: 2.3 });
 
         if (shellType === 'willow') {
-          // 1. Golden Willow Cascade
-          const count = 115;
-          for (let i = 0; i < count; i++) {
+          // 1. Golden Willow Cascade (graceful wide arching sweep, never vertical rain dashes)
+          for (let i = 0; i < 108; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(140, 320) * baseScale * Math.pow(Math.random(), 0.25);
+            const speed = rand(150, 290) * baseScale * Math.pow(Math.random(), 0.25);
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
-              vy: Math.cos(phi) * speed * 0.84 - 24 * baseScale,
-              drag: 0.948,
-              gravity: 145 * baseScale,
-              decay: rand(0.32, 0.48),
-              width: rand(1.4, 2.1),
-              maxTrail: 16,
-              color: i % 4 === 0 ? palette.secondary : '#ffda88',
+              vy: Math.cos(phi) * speed * 0.78 - 28 * baseScale,
+              drag: 0.976,
+              gravity: 74 * baseScale,
+              decay: rand(0.38, 0.52),
+              width: rand(1.4, 2.0),
+              maxTrail: 18,
+              color: i % 4 === 0 ? palette.secondary : '#ffdf94',
               twinkle: i % 3 === 0,
               layer, alphaMul
             });
           }
         } else if (shellType === 'peony') {
-          // 2. Dual-Color Lush Peony Blossom
-          for (let i = 0; i < 120; i++) {
+          // 2. Dual-Color Peony Blossom
+          for (let i = 0; i < 110; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(180, 340) * baseScale * (0.78 + 0.25 * Math.random());
+            const speed = rand(150, 265) * baseScale * (0.78 + 0.25 * Math.random());
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
-              vy: Math.cos(phi) * speed * 0.88 - 18 * baseScale,
-              drag: 0.938,
-              gravity: 100 * baseScale,
-              decay: rand(0.42, 0.62),
-              width: rand(1.6, 2.4),
-              maxTrail: 12,
+              vy: Math.cos(phi) * speed * 0.88 - 14 * baseScale,
+              drag: 0.968,
+              gravity: 56 * baseScale,
+              decay: rand(0.45, 0.62),
+              width: rand(1.5, 2.15),
+              maxTrail: 13,
               color: palette.primary,
               twinkle: false,
-              layer, alphaMul
-            });
-          }
-          for (let i = 0; i < 52; i++) {
-            const u = Math.random(), v = Math.random();
-            const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(80, 145) * baseScale;
-            addFwSpark({
-              x, y,
-              vx: Math.sin(phi) * Math.cos(theta) * speed,
-              vy: Math.cos(phi) * speed * 0.88 - 12 * baseScale,
-              drag: 0.935,
-              gravity: 85 * baseScale,
-              decay: rand(0.50, 0.68),
-              width: 1.5,
-              maxTrail: 9,
-              color: palette.secondary,
-              twinkle: true,
-              layer, alphaMul
-            });
-          }
-        } else if (shellType === 'saturn') {
-          // 3. 3D Tilted Saturn Ring + Core Sphere
-          const tilt = rand(-0.46, 0.46);
-          const tiltY = rand(0.32, 0.50);
-          const csT = Math.cos(tilt), snT = Math.sin(tilt);
-          const ringCount = 74;
-          for (let i = 0; i < ringCount; i++) {
-            const a = (i / ringCount) * Math.PI * 2 + rand(-0.02, 0.02);
-            const sp = rand(230, 260) * baseScale;
-            const rx = Math.cos(a) * sp;
-            const ry = Math.sin(a) * sp * tiltY;
-            addFwSpark({
-              x, y,
-              vx: rx * csT - ry * snT,
-              vy: rx * snT + ry * csT - 12 * baseScale,
-              drag: 0.938,
-              gravity: 65 * baseScale,
-              decay: rand(0.44, 0.58),
-              width: 2.0,
-              maxTrail: 11,
-              color: palette.primary,
-              twinkle: true,
               layer, alphaMul
             });
           }
           for (let i = 0; i < 46; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const sp = rand(75, 130) * baseScale;
+            const speed = rand(65, 120) * baseScale;
             addFwSpark({
               x, y,
-              vx: Math.sin(phi) * Math.cos(theta) * sp,
-              vy: Math.cos(phi) * sp * 0.85 - 10 * baseScale,
-              drag: 0.935,
-              gravity: 65 * baseScale,
-              decay: rand(0.50, 0.66),
-              width: 1.7,
-              maxTrail: 8,
-              color: palette.secondary,
-              twinkle: false,
-              layer, alphaMul
-            });
-          }
-        } else if (shellType === 'heartShell') {
-          // 4. Double-Layer Romantic Sky Heart
-          const count = 76;
-          const hScale = 12.2 * baseScale;
-          const rot = rand(-0.20, 0.20);
-          const cs = Math.cos(rot), sn = Math.sin(rot);
-          for (let i = 0; i < count; i++) {
-            const t = (i / count) * Math.PI * 2;
-            const hx = 16 * Math.pow(Math.sin(t), 3) * hScale;
-            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale;
-            addFwSpark({
-              x, y,
-              vx: (hx * cs - hy * sn) + rand(-8, 8),
-              vy: (hx * sn + hy * cs) - 10 * baseScale + rand(-8, 8),
-              drag: 0.935,
-              gravity: 60 * baseScale,
-              decay: rand(0.44, 0.58),
-              width: 2.0,
+              vx: Math.sin(phi) * Math.cos(theta) * speed,
+              vy: Math.cos(phi) * speed * 0.88 - 10 * baseScale,
+              drag: 0.966,
+              gravity: 48 * baseScale,
+              decay: rand(0.52, 0.68),
+              width: 1.4,
               maxTrail: 10,
-              color: i % 3 === 0 ? '#ffd8eb' : '#ff6aa2',
+              color: palette.secondary,
               twinkle: true,
               layer, alphaMul
             });
           }
-          for (let i = 0; i < 36; i++) {
-            const t = (i / 36) * Math.PI * 2;
-            const hx = 16 * Math.pow(Math.sin(t), 3) * hScale * 0.58;
-            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale * 0.58;
+        } else if (shellType === 'chrysanthemum') {
+          // 3. Long-Trailing Spherical Chrysanthemum Burst with Glowing Tips
+          for (let i = 0; i < 92; i++) {
+            const u = Math.random(), v = Math.random();
+            const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
+            const speed = rand(180, 245) * baseScale;
             addFwSpark({
               x, y,
-              vx: (hx * cs - hy * sn),
-              vy: (hx * sn + hy * cs) - 10 * baseScale,
-              drag: 0.935,
-              gravity: 60 * baseScale,
+              vx: Math.sin(phi) * Math.cos(theta) * speed,
+              vy: Math.cos(phi) * speed * 0.90 - 12 * baseScale,
+              drag: 0.974,
+              gravity: 54 * baseScale,
+              decay: rand(0.42, 0.56),
+              width: 1.75,
+              maxTrail: 16,
+              color: i % 5 === 0 ? '#fff6df' : palette.primary,
+              twinkle: i % 4 === 0,
+              layer, alphaMul
+            });
+          }
+        } else if (shellType === 'heartShell') {
+          // 4. Organic Double-Layer Romantic Sky Heart
+          const hScale = 9.2 * baseScale;
+          const rot = rand(-0.18, 0.18);
+          const cs = Math.cos(rot), sn = Math.sin(rot);
+          for (let i = 0; i < 72; i++) {
+            const t = (i / 72) * Math.PI * 2;
+            const hx = 16 * Math.pow(Math.sin(t), 3) * hScale;
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale;
+            addFwSpark({
+              x, y,
+              vx: (hx * cs - hy * sn) + rand(-10, 10),
+              vy: (hx * sn + hy * cs) - 8 * baseScale + rand(-10, 10),
+              drag: 0.964,
+              gravity: 34 * baseScale,
+              decay: rand(0.46, 0.60),
+              width: 1.85,
+              maxTrail: 10,
+              color: i % 3 === 0 ? palette.secondary : palette.primary,
+              twinkle: true,
+              layer, alphaMul
+            });
+          }
+          for (let i = 0; i < 34; i++) {
+            const t = (i / 34) * Math.PI * 2;
+            const hx = 16 * Math.pow(Math.sin(t), 3) * hScale * 0.56;
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale * 0.56;
+            addFwSpark({
+              x, y,
+              vx: (hx * cs - hy * sn) + rand(-8, 8),
+              vy: (hx * sn + hy * cs) - 8 * baseScale + rand(-8, 8),
+              drag: 0.964,
+              gravity: 34 * baseScale,
               decay: rand(0.50, 0.65),
-              width: 1.5,
+              width: 1.45,
               maxTrail: 8,
               color: '#ffe8b8',
               twinkle: false,
@@ -1431,101 +1490,88 @@
             });
           }
         } else if (shellType === 'starShell') {
-          // 5. Crisp 5-Pointed Starburst Aerial Shell
-          const ptsPerEdge = 9;
-          const outerR = 235 * baseScale, innerR = 102 * baseScale;
+          // 5. Organic Radial 5-Arm Starburst Plumes
           const rot = rand(-0.25, 0.25);
-          const cs = Math.cos(rot), sn = Math.sin(rot);
-          for (let edge = 0; edge < 10; edge++) {
-            const a1 = (edge * Math.PI) / 5 - Math.PI / 2;
-            const a2 = ((edge + 1) * Math.PI) / 5 - Math.PI / 2;
-            const r1 = edge % 2 === 0 ? outerR : innerR;
-            const r2 = (edge + 1) % 2 === 0 ? outerR : innerR;
-            for (let k = 0; k < ptsPerEdge; k++) {
-              const t = k / ptsPerEdge;
-              const px = Math.cos(a1) * r1 * (1 - t) + Math.cos(a2) * r2 * t;
-              const py = Math.sin(a1) * r1 * (1 - t) + Math.sin(a2) * r2 * t;
+          for (let arm = 0; arm < 5; arm++) {
+            const baseA = (arm / 5) * Math.PI * 2 - Math.PI / 2 + rot;
+            for (let k = 0; k < 22; k++) {
+              const frac = (k + 1) / 22;
+              const a = baseA + rand(-0.14, 0.14) * (1.2 - frac * 0.6);
+              const sp = (80 + frac * 165) * baseScale;
               addFwSpark({
                 x, y,
-                vx: (px * cs - py * sn) + rand(-6, 6),
-                vy: (px * sn + py * cs) - 10 * baseScale + rand(-6, 6),
-                drag: 0.938,
-                gravity: 65 * baseScale,
-                decay: rand(0.45, 0.58),
-                width: 1.9,
+                vx: Math.cos(a) * sp,
+                vy: Math.sin(a) * sp - 10 * baseScale,
+                drag: 0.966,
+                gravity: 42 * baseScale,
+                decay: rand(0.46, 0.62),
+                width: 1.55 + frac * 0.75,
                 maxTrail: 10,
-                color: k % 2 === 0 ? palette.primary : '#fff4d2',
-                twinkle: true,
+                color: frac > 0.65 ? '#fff4d2' : palette.primary,
+                twinkle: frac > 0.6,
                 layer, alphaMul
               });
             }
           }
         } else if (shellType === 'cracklePalm') {
-          // 6. Crossette Crackle Palm (sweeping comets bursting into crackling fairy-dust)
-          const arms = 30;
-          for (let i = 0; i < arms; i++) {
+          // 6. Crossette Crackle Palm
+          for (let i = 0; i < 28; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const sp = rand(180, 320) * baseScale;
+            const sp = rand(145, 250) * baseScale;
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * sp,
-              vy: Math.cos(phi) * sp * 0.85 - 20 * baseScale,
-              drag: 0.95,
-              gravity: 110 * baseScale,
+              vy: Math.cos(phi) * sp * 0.85 - 16 * baseScale,
+              drag: 0.972,
+              gravity: 66 * baseScale,
               decay: rand(0.52, 0.66),
-              width: 2.2,
-              maxTrail: 13,
+              width: 2.0,
+              maxTrail: 12,
               color: i % 2 === 0 ? palette.primary : palette.secondary,
               canSplit: true,
               baseScale, palette,
               layer, alphaMul
             });
           }
-        } else if (shellType === 'spiralWheel') {
-          // 7. Spiral Pinwheel / Vortex Shell (curved swirling galaxy arms!)
-          const arms = 6;
-          const sparksPerArm = 16;
-          const spinDir = Math.random() < 0.5 ? 1 : -1;
-          for (let a = 0; a < arms; a++) {
-            const baseAng = (a / arms) * Math.PI * 2;
-            for (let k = 0; k < sparksPerArm; k++) {
-              const frac = (k + 1) / sparksPerArm;
-              const ang = baseAng + spinDir * frac * 0.85;
-              const sp = (90 + frac * 225) * baseScale;
-              addFwSpark({
-                x, y,
-                vx: Math.cos(ang) * sp,
-                vy: Math.sin(ang) * sp - 12 * baseScale,
-                drag: 0.942,
-                gravity: 85 * baseScale,
-                decay: rand(0.42, 0.58),
-                width: 1.85,
-                maxTrail: 13,
-                color: k % 3 === 0 ? palette.secondary : palette.primary,
-                twinkle: frac > 0.65,
-                layer, alphaMul
-              });
-            }
+        } else if (shellType === 'kamuro') {
+          // 7. Kamuro Glittering Silver-Gold Canopy
+          for (let i = 0; i < 130; i++) {
+            const u = Math.random(), v = Math.random();
+            const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
+            const sp = rand(115, 260) * baseScale * Math.pow(Math.random(), 0.3);
+            addFwSpark({
+              x, y,
+              vx: Math.sin(phi) * Math.cos(theta) * sp,
+              vy: Math.cos(phi) * sp * 0.80 - 22 * baseScale,
+              drag: 0.974,
+              gravity: 68 * baseScale,
+              decay: rand(0.38, 0.54),
+              width: rand(1.45, 2.1),
+              maxTrail: 14,
+              color: i % 3 === 0 ? '#ffffff' : palette.primary,
+              twinkle: true,
+              layer, alphaMul
+            });
           }
         } else {
-          // 8. Concentric Double Halo Ring + Sparkling Center
+          // 8. Double-Ring Dahlia Halo (with organic radial scatter)
           for (let ring = 0; ring < 2; ring++) {
-            const cnt = ring === 0 ? 64 : 42;
-            const rSpd = (ring === 0 ? 255 : 155) * baseScale;
+            const cnt = ring === 0 ? 58 : 38;
+            const rSpd = (ring === 0 ? 195 : 115) * baseScale;
             const col = ring === 0 ? palette.primary : palette.secondary;
             for (let i = 0; i < cnt; i++) {
-              const a = (i / cnt) * Math.PI * 2 + ring * 0.12;
-              const sp = rSpd * rand(0.94, 1.06);
+              const a = (i / cnt) * Math.PI * 2 + rand(-0.04, 0.04);
+              const sp = rSpd * rand(0.90, 1.10);
               addFwSpark({
                 x, y,
                 vx: Math.cos(a) * sp,
-                vy: Math.sin(a) * sp - 12 * baseScale,
-                drag: 0.94,
-                gravity: 75 * baseScale,
-                decay: rand(0.45, 0.60),
-                width: ring === 0 ? 2.0 : 1.7,
-                maxTrail: 11,
+                vy: Math.sin(a) * sp - 10 * baseScale,
+                drag: 0.968,
+                gravity: 44 * baseScale,
+                decay: rand(0.46, 0.60),
+                width: ring === 0 ? 1.85 : 1.55,
+                maxTrail: 10,
                 color: col,
                 twinkle: ring === 1,
                 layer, alphaMul
@@ -1538,12 +1584,22 @@
       function updateAndRenderFireworks(dt) {
         const w = state.width, h = state.height;
 
+        for (let z = 0; z < SKY_ZONES.length; z++) {
+          if (SKY_ZONES[z].cooldown > 0) SKY_ZONES[z].cooldown = Math.max(0, SKY_ZONES[z].cooldown - dt);
+        }
+        for (let z = 0; z < MOB_ZONES.length; z++) {
+          if (MOB_ZONES[z].cooldown > 0) MOB_ZONES[z].cooldown = Math.max(0, MOB_ZONES[z].cooldown - dt);
+        }
+        for (let b = fwActiveBursts.length - 1; b >= 0; b--) {
+          fwActiveBursts[b].life -= dt;
+          if (fwActiveBursts[b].life <= 0) fwActiveBursts.splice(b, 1);
+        }
+
         if (state.fireworksEnabled && state.introProgress > 0.72) {
           fwTimer -= dt;
           if (fwTimer <= 0) {
             launchFirework();
-            if (Math.random() < 0.35) launchFirework();
-            fwTimer = rand(1.7, 2.8);
+            fwTimer = rand(1.9, 2.9);
           }
         }
 
@@ -1763,6 +1819,9 @@
         fwShells.length = 0;
         fwSparks.length = 0;
         fwFlashes.length = 0;
+        fwActiveBursts.length = 0;
+        SKY_ZONES.forEach(z => z.cooldown = 0);
+        MOB_ZONES.forEach(z => z.cooldown = 0);
         fwBackCtx.clearRect(0, 0, state.width, state.height);
         fwFrontCtx.clearRect(0, 0, state.width, state.height);
         greetingEl.classList.remove('visible');
@@ -1803,10 +1862,10 @@
         const h = state.height;
         const isPortrait = w < h;
         const minDim = Math.min(w, h);
-        const fov = (isPortrait ? w * 0.80 : minDim * 0.82) * state.zoom;
+        const fov = (isPortrait ? w * 0.85 : minDim * 0.75) * state.zoom;
         const camDist = 665;
         const cx = w * 0.5;
-        const cy = h * (isPortrait ? 0.43 : 0.415);
+        const cy = h * (isPortrait ? 0.462 : 0.382);
 
         if (!state.introDone) {
           state.introProgress += dt * 0.33;
@@ -1814,9 +1873,14 @@
             greetingEl.classList.add('visible');
           }
           if (state.introProgress >= 1.04 && state.fireworksEnabled && fwShells.length === 0 && fwSparks.length === 0) {
-            launchFirework(rand(0.15, 0.28), rand(0.18, 0.28), nextRandomFwType());
-            launchFirework(rand(0.72, 0.85), rand(0.19, 0.29), nextRandomFwType());
-            launchFirework(rand(0.28, 0.40), rand(0.13, 0.22), nextRandomFwType());
+            if (isPortrait) {
+              launchFirework(0.20, 0.21, nextRandomFwType());
+              launchFirework(0.80, 0.17, nextRandomFwType());
+            } else {
+              launchFirework(0.14, 0.32, nextRandomFwType());
+              launchFirework(0.32, 0.16, nextRandomFwType());
+              launchFirework(0.83, 0.24, nextRandomFwType());
+            }
           }
           if (state.introProgress >= 1.38) {
             state.introProgress = 1.38;
@@ -2140,6 +2204,9 @@
         const isHidden = panel.classList.toggle('hidden');
         btnTogglePanel.classList.toggle('active', !isHidden);
       });
+      document.getElementById('mobReplay').addEventListener('click', () => document.getElementById('btnReplay').click());
+      document.getElementById('mobMusic').addEventListener('click', () => document.getElementById('btnMusic').click());
+      document.getElementById('mobGesture').addEventListener('click', () => document.getElementById('btnGesture').click());
 
       function toggleZenMode() {
         const on = document.body.classList.toggle('zen-mode');
