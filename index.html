@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Interactive 3D Particle Christmas Tree · Volumetric Pine Boughs, Bokeh Snow & Nebula Physics" />
+  <meta name="description" content="Interactive 3D Particle Christmas Tree · Pure Luminous Stardust & Nebula Physics" />
   <title>Merry Christmas · 3D Particle Tree</title>
   <style>
     :root {
       --accent: #ffd88a;
-      --panel-bg: rgba(10, 14, 24, 0.62);
-      --panel-border: rgba(255, 255, 255, 0.16);
+      --panel-bg: rgba(10, 14, 24, 0.58);
+      --panel-border: rgba(255, 255, 255, 0.15);
       --text-main: rgba(255, 255, 255, 0.94);
       --text-sub: rgba(255, 255, 255, 0.68);
     }
@@ -25,7 +25,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #03050c;
+      background: #03040a;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color: var(--text-main);
       user-select: none;
@@ -43,7 +43,6 @@
       cursor: grabbing;
     }
 
-    /* Greeting Overlay */
     .greeting-overlay {
       position: fixed;
       left: 0;
@@ -584,16 +583,14 @@
         gold: {
           name: 'Champagne Gold',
           bgTop: '#03040a',
-          bgMid: '#0d0912',
-          bgBot: '#1c1009',
+          bgMid: '#0b0811',
+          bgBot: '#180f09',
           titleColor: '#fff7e6',
           titleGlow: 'rgba(255, 210, 122, 0.85)',
-          treeColors: ['#fff9eb', '#ffe5a3', '#ffc863', '#f5a536', '#c97828'],
-          pineColors: ['#1b4d38', '#2a6f4e', '#e5b869'],
+          treeColors: ['#fff9eb', '#ffe5a3', '#ffc863', '#f5a536', '#d88935'],
           ribbonColors: ['#ffffff', '#ffefc4', '#ffd068'],
-          ribbonGlow: 'rgba(255, 224, 150, 0.34)',
-          ribbonCore: 'rgba(255, 248, 224, 0.52)',
-          ornamentColors: ['#e84a5f', '#ffd166', '#fff5dc', '#ff9b54'],
+          ribbonGlow: 'rgba(255, 224, 150, 0.14)',
+          ornamentColors: ['#fff5d6', '#ffd166', '#ff8c5a', '#ffffff'],
           ringColors: ['#ffe4a3', '#ffb95c', '#ffffff'],
           topperGlow: '#ffc252',
           accent: '#ffd88a'
@@ -601,16 +598,14 @@
         pink: {
           name: 'Rose Pink',
           bgTop: '#07030f',
-          bgMid: '#170821',
-          bgBot: '#270a24',
+          bgMid: '#15071e',
+          bgBot: '#240921',
           titleColor: '#fff0f7',
           titleGlow: 'rgba(255, 138, 200, 0.88)',
-          treeColors: ['#fff4f9', '#ffc7e5', '#ff8ac8', '#de6aff', '#a878ff'],
-          pineColors: ['#4a1b45', '#732b68', '#ff9ed2'],
+          treeColors: ['#fff4f9', '#ffc7e5', '#ff8ac8', '#de6aff', '#b182ff'],
           ribbonColors: ['#ffffff', '#ffd8ee', '#ff96d1'],
-          ribbonGlow: 'rgba(255, 165, 218, 0.34)',
-          ribbonCore: 'rgba(255, 240, 250, 0.52)',
-          ornamentColors: ['#ff75b5', '#ffe1a8', '#fff2f8', '#c78dff'],
+          ribbonGlow: 'rgba(255, 165, 218, 0.14)',
+          ornamentColors: ['#fff0f6', '#ffb3da', '#ffe1a8', '#d79eff'],
           ringColors: ['#ffb8de', '#d88cff', '#ffffff'],
           topperGlow: '#ff7ec6',
           accent: '#ff94c8'
@@ -618,16 +613,14 @@
         cyber: {
           name: 'Cyber Blue',
           bgTop: '#020510',
-          bgMid: '#051126',
-          bgBot: '#091c38',
+          bgMid: '#051124',
+          bgBot: '#091b34',
           titleColor: '#eefaff',
           titleGlow: 'rgba(118, 224, 255, 0.86)',
-          treeColors: ['#ffffff', '#ccf6ff', '#7ce6ff', '#42b6ff', '#7a96ff'],
-          pineColors: ['#0d2e52', '#174d7a', '#8ce8ff'],
+          treeColors: ['#ffffff', '#ccf6ff', '#7ce6ff', '#48b8ff', '#8ea8ff'],
           ribbonColors: ['#ffffff', '#c0f5ff', '#62d9ff'],
-          ribbonGlow: 'rgba(128, 232, 255, 0.34)',
-          ribbonCore: 'rgba(232, 252, 255, 0.54)',
-          ornamentColors: ['#ffd470', '#58d8ff', '#ffffff', '#7a96ff'],
+          ribbonGlow: 'rgba(128, 232, 255, 0.14)',
+          ornamentColors: ['#ffe694', '#7ce8ff', '#ffffff', '#ffd06b'],
           ringColors: ['#a6eeff', '#5cc5ff', '#ffffff'],
           topperGlow: '#6be3ff',
           accent: '#7ce8ff'
@@ -635,16 +628,14 @@
         aurora: {
           name: 'Aurora Night',
           bgTop: '#020612',
-          bgMid: '#061526',
-          bgBot: '#081f24',
+          bgMid: '#061424',
+          bgBot: '#081d22',
           titleColor: '#effff8',
           titleGlow: 'rgba(110, 255, 184, 0.84)',
           treeColors: ['#f2fff8', '#a3ffd6', '#4ef0b6', '#42c6ff', '#9c88ff'],
-          pineColors: ['#0e3d34', '#186152', '#7effcd'],
           ribbonColors: ['#ffffff', '#b8ffe2', '#6ef5ff'],
-          ribbonGlow: 'rgba(120, 255, 200, 0.32)',
-          ribbonCore: 'rgba(235, 255, 248, 0.5)',
-          ornamentColors: ['#ffe58f', '#ff7aa8', '#6effc8', '#ffffff'],
+          ribbonGlow: 'rgba(120, 255, 200, 0.13)',
+          ornamentColors: ['#ffe58f', '#ff7aa8', '#80ffce', '#ffffff'],
           ringColors: ['#82ffd0', '#66c9ff', '#ffffff'],
           topperGlow: '#ff8cc8',
           accent: '#6effb8'
@@ -705,7 +696,7 @@
         manualMode: false
       };
 
-      // ==================== Pre-rendered Sprites ====================
+      // ==================== Crisp Pinpoint Glow Sprites ====================
       const spriteCache = new Map();
 
       function hexToRgba(hex, alpha) {
@@ -717,119 +708,49 @@
         return `rgba(${r},${g},${b},${alpha})`;
       }
 
-      function adjustHex(hex, factor) {
-        const clean = hex.replace('#', '');
-        const num = parseInt(clean, 16);
-        const r = Math.min(255, Math.max(0, Math.round(((num >> 16) & 255) * factor)));
-        const g = Math.min(255, Math.max(0, Math.round(((num >> 8) & 255) * factor)));
-        const b = Math.min(255, Math.max(0, Math.round((num & 255) * factor)));
-        return `rgb(${r},${g},${b})`;
-      }
-
-      function getGlowSprite(color, soft = false) {
-        const key = color + (soft ? '_s' : '');
-        if (spriteCache.has(key)) return spriteCache.get(key);
-        const size = 64;
-        const c = document.createElement('canvas');
-        c.width = size;
-        c.height = size;
-        const gctx = c.getContext('2d');
-        const half = size / 2;
-        const grad = gctx.createRadialGradient(half, half, 0, half, half, half);
-        if (soft) {
-          grad.addColorStop(0, '#ffffff');
-          grad.addColorStop(0.2, color);
-          grad.addColorStop(0.55, hexToRgba(color, 0.24));
-          grad.addColorStop(1, 'rgba(0,0,0,0)');
-        } else {
-          grad.addColorStop(0, '#ffffff');
-          grad.addColorStop(0.16, '#ffffff');
-          grad.addColorStop(0.36, color);
-          grad.addColorStop(0.75, hexToRgba(color, 0.16));
-          grad.addColorStop(1, 'rgba(0,0,0,0)');
-        }
-        gctx.fillStyle = grad;
-        gctx.fillRect(0, 0, size, size);
-        spriteCache.set(key, c);
-        return c;
-      }
-
-      // 3D Glassy Ornament Bauble Sprite
-      function getBaubleSprite(color) {
-        const key = 'bauble_' + color;
+      // Three.js-style pinpoint star sprite: sharp tiny white core + silky radial bloom
+      function getPinpointSprite(color) {
+        const key = 'pin_' + color;
         if (spriteCache.has(key)) return spriteCache.get(key);
         const size = 64;
         const c = document.createElement('canvas');
         c.width = size;
         c.height = size;
         const g = c.getContext('2d');
-        const r = 24;
-        const cx = 32, cy = 32;
-
-        // Outer subtle glow
-        const halo = g.createRadialGradient(cx, cy, r * 0.6, cx, cy, 32);
-        halo.addColorStop(0, hexToRgba(color, 0.45));
-        halo.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = halo;
-        g.beginPath();
-        g.arc(cx, cy, 32, 0, Math.PI * 2);
-        g.fill();
-
-        // Sphere shading (specular highlight top-left, deep rim bottom-right)
-        const sphere = g.createRadialGradient(cx - 8, cy - 8, 2, cx, cy, r);
-        sphere.addColorStop(0, '#ffffff');
-        sphere.addColorStop(0.25, adjustHex(color, 1.2));
-        sphere.addColorStop(0.68, color);
-        sphere.addColorStop(1, adjustHex(color, 0.35));
-        g.fillStyle = sphere;
-        g.beginPath();
-        g.arc(cx, cy, r, 0, Math.PI * 2);
-        g.fill();
-
-        // Specular glint dot
-        g.fillStyle = 'rgba(255,255,255,0.88)';
-        g.beginPath();
-        g.ellipse(cx - 8, cy - 8, 4.2, 2.6, -0.6, 0, Math.PI * 2);
-        g.fill();
-
-        spriteCache.set(key, c);
-        return c;
-      }
-
-      // Anamorphic 4-point Starburst Flare Sprite
-      function getStarFlareSprite(color) {
-        const key = 'flare_' + color;
-        if (spriteCache.has(key)) return spriteCache.get(key);
-        const size = 96;
-        const c = document.createElement('canvas');
-        c.width = size;
-        c.height = size;
-        const g = c.getContext('2d');
         const half = size / 2;
 
-        const glow = g.createRadialGradient(half, half, 0, half, half, 26);
-        glow.addColorStop(0, '#ffffff');
-        glow.addColorStop(0.3, hexToRgba(color, 0.75));
-        glow.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = glow;
+        const grad = g.createRadialGradient(half, half, 0, half, half, half);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.11, '#ffffff');
+        grad.addColorStop(0.24, color);
+        grad.addColorStop(0.48, hexToRgba(color, 0.22));
+        grad.addColorStop(0.75, hexToRgba(color, 0.04));
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = grad;
         g.fillRect(0, 0, size, size);
+        spriteCache.set(key, c);
+        return c;
+      }
 
-        const drawRay = (horizontal) => {
-          const grad = horizontal
-            ? g.createLinearGradient(0, half, size, half)
-            : g.createLinearGradient(half, 0, half, size);
-          grad.addColorStop(0, 'rgba(255,255,255,0)');
-          grad.addColorStop(0.45, hexToRgba(color, 0.75));
-          grad.addColorStop(0.5, '#ffffff');
-          grad.addColorStop(0.55, hexToRgba(color, 0.75));
-          grad.addColorStop(1, 'rgba(255,255,255,0)');
-          g.fillStyle = grad;
-          if (horizontal) g.fillRect(4, half - 1.3, size - 8, 2.6);
-          else g.fillRect(half - 1.3, 4, 2.6, size - 8);
-        };
-        drawRay(true);
-        drawRay(false);
+      // Soft ambient halo orb (for fairy-light bulbs & topper flare)
+      function getOrbSprite(color) {
+        const key = 'orb_' + color;
+        if (spriteCache.has(key)) return spriteCache.get(key);
+        const size = 64;
+        const c = document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        const g = c.getContext('2d');
+        const half = size / 2;
 
+        const grad = g.createRadialGradient(half, half, 0, half, half, half);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.18, '#ffffff');
+        grad.addColorStop(0.38, color);
+        grad.addColorStop(0.68, hexToRgba(color, 0.26));
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, size, size);
         spriteCache.set(key, c);
         return c;
       }
@@ -858,21 +779,18 @@
       // ==================== Particle Systems ====================
       let bgStars = [];
       let treeParticles = [];
-      let ornamentList = [];
-      let flareAnchors = [];
       let ribbonCurves = [[], []];
       let ringParticles = [];
       let snowParticles = [];
-      let bokehSnow = [];
       let emberParticles = [];
       let topperParticles = [];
       let photoFrames = [];
       let bursts = [];
 
-      const TREE_HEIGHT = 435;
-      const TREE_BASE_Y = 202;
-      const TREE_TOP_Y = TREE_BASE_Y - TREE_HEIGHT; // -233
-      const TREE_RADIUS = 172;
+      const TREE_HEIGHT = 432;
+      const TREE_BASE_Y = 200;
+      const TREE_TOP_Y = TREE_BASE_Y - TREE_HEIGHT; // -232
+      const TREE_RADIUS = 168;
 
       function buildParticles() {
         const theme = THEMES[currentThemeKey];
@@ -883,93 +801,52 @@
           bgStars.push({
             x: Math.random(),
             y: Math.random(),
-            size: rand(0.8, 2.3),
+            size: rand(0.8, 2.2),
             phase: rand(0, Math.PI * 2),
             speed: rand(0.8, 2.6),
-            alpha: rand(0.18, 0.88)
+            alpha: rand(0.18, 0.86)
           });
         }
 
         treeParticles = [];
-        ornamentList = [];
-        flareAnchors = [];
 
-        // 1. Inner Warm Tree Trunk & Core Glow Mist (~450 particles)
-        for (let i = 0; i < 450; i++) {
-          const hNorm = rand(0.06, 1.02);
+        // 1. Airy, Ethereal Volumetric Stardust Cone (4,400 crisp micro-stars)
+        const foliageCount = 4400;
+        for (let i = 0; i < foliageCount; i++) {
+          const hNorm = Math.pow(Math.random(), 0.78);
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = rand(0, hNorm * TREE_RADIUS * 0.38);
+          // Gentle organic tier ripple (graceful, not jagged!)
+          const wave = 1 + 0.08 * Math.sin(hNorm * Math.PI * 10);
+          const maxR = hNorm * TREE_RADIUS * wave;
+          const radialBias = Math.pow(Math.random(), 0.38);
+          const r = maxR * radialBias;
           const angle = Math.random() * Math.PI * 2;
-          const tx = Math.cos(angle) * r;
-          const tz = Math.sin(angle) * r;
-          const sp = randomSpherePoint(140, 420);
-          treeParticles.push({
-            tx, ty: y, tz,
-            sx: sp.x, sy: sp.y, sz: sp.z,
-            size: rand(4.5, 9.5),
-            baseAlpha: rand(0.16, 0.36),
-            phase: rand(0, Math.PI * 2),
-            twinkleSpeed: rand(1.0, 2.2),
-            color: theme.treeColors[Math.min(2, Math.floor(Math.random() * theme.treeColors.length))],
-            soft: true
-          });
-        }
-
-        // 2. Lush Layered Pine Boughs (~4200 particles arranged in 9 realistic spruce tiers with drooping branches!)
-        const tiers = 9;
-        const boughCount = 4200;
-        for (let i = 0; i < boughCount; i++) {
-          const tierIdx = Math.floor(Math.pow(Math.random(), 0.72) * tiers);
-          const tierStart = tierIdx / tiers;
-          const tierSpan = 1.18 / tiers;
-          const localH = Math.random(); // 0 at tier top -> 1 at drooping tip
-          const hNorm = Math.min(1, tierStart + localH * tierSpan);
-
-          // Each tier flares out sharply toward its lower skirt
-          const tierRadius = (0.14 + 0.86 * hNorm) * TREE_RADIUS * (0.48 + 0.56 * Math.pow(localH, 0.65));
-          const branchesInTier = 7 + Math.floor(tierIdx * 0.9);
-          const branchIdx = Math.floor(Math.random() * branchesInTier);
-          const baseAngle = (branchIdx / branchesInTier) * Math.PI * 2 + tierIdx * 0.55;
-          const radialFrac = Math.pow(Math.random(), 0.45);
-          const angleJitter = (Math.random() - 0.5) * (0.55 - 0.25 * radialFrac);
-          const angle = baseAngle + angleJitter;
-
-          const r = tierRadius * radialFrac;
-          // Slight graceful droop on outer branch tips
-          const droop = Math.pow(radialFrac, 1.8) * (10 + tierIdx * 1.4);
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT + droop;
-
           const tx = Math.cos(angle) * r;
           const tz = Math.sin(angle) * r;
           const sp = randomSpherePoint(180, 500);
 
-          const isTipHighlight = radialFrac > 0.78 && Math.random() < 0.55;
-          const color = isTipHighlight
-            ? theme.treeColors[Math.floor(Math.random() * Math.min(3, theme.treeColors.length))]
-            : (Math.random() < 0.38 ? pick(theme.pineColors) : pick(theme.treeColors));
-
           treeParticles.push({
             tx, ty: y, tz,
             sx: sp.x, sy: sp.y, sz: sp.z,
-            size: rand(1.9, 4.8) * (0.72 + 0.45 * radialFrac),
-            baseAlpha: isTipHighlight ? rand(0.65, 0.98) : rand(0.32, 0.82),
+            size: rand(2.6, 6.0) * (0.72 + 0.42 * radialBias),
+            baseAlpha: rand(0.32, 0.94),
             phase: rand(0, Math.PI * 2),
             twinkleSpeed: rand(1.5, 4.4),
-            color,
-            soft: !isTipHighlight
+            color: pick(theme.treeColors),
+            kind: 'pin'
           });
         }
 
-        // 3. Double Helical Fairy Light Ribbons (~1350 particles + continuous dual-pass silk curves)
-        const ribbonCount = 1350;
+        // 2. Dense Double-Helix Stardust Ribbons (1,600 sparkling particles + faint silk trail)
+        const ribbonCount = 1600;
         const turns = 6.5;
         for (let i = 0; i < ribbonCount; i++) {
           const strand = i % 2;
           const t = i / ribbonCount;
-          const jitterT = Math.min(1, Math.max(0, t + rand(-0.012, 0.012)));
+          const jitterT = Math.min(1, Math.max(0, t + rand(-0.013, 0.013)));
           const y = TREE_TOP_Y + jitterT * TREE_HEIGHT;
           const r = jitterT * TREE_RADIUS * 1.04 + rand(-5, 6);
-          const angle = jitterT * turns * Math.PI * 2 + strand * Math.PI + rand(-0.14, 0.14);
+          const angle = jitterT * turns * Math.PI * 2 + strand * Math.PI + rand(-0.15, 0.15);
           const tx = Math.cos(angle) * r;
           const tz = Math.sin(angle) * r;
           const sp = randomSpherePoint(200, 520);
@@ -977,17 +854,17 @@
           treeParticles.push({
             tx, ty: y, tz,
             sx: sp.x, sy: sp.y, sz: sp.z,
-            size: rand(2.8, 6.4),
-            baseAlpha: rand(0.62, 1.0),
+            size: rand(3.6, 7.8),
+            baseAlpha: rand(0.65, 1.0),
             phase: rand(0, Math.PI * 2),
             twinkleSpeed: rand(2.2, 5.2),
             color: pick(theme.ribbonColors),
-            soft: true
+            kind: 'pin'
           });
         }
 
         ribbonCurves = [[], []];
-        const curveSteps = 220;
+        const curveSteps = 200;
         for (let strand = 0; strand < 2; strand++) {
           for (let i = 0; i <= curveSteps; i++) {
             const t = i / curveSteps;
@@ -998,75 +875,59 @@
           }
         }
 
-        // 4. 3D Shaded Glass Ornament Baubles (~62)
-        const ornamentCount = 62;
+        // 3. Pure Luminous Fairy-Light Orbs (64 additive glow bulbs, NO opaque plastic balls!)
+        const ornamentCount = 64;
         for (let i = 0; i < ornamentCount; i++) {
-          const hNorm = 0.14 + (i / ornamentCount) * 0.82;
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT + rand(-4, 6);
+          const hNorm = 0.14 + (i / ornamentCount) * 0.83;
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT + rand(-4, 4);
           const r = hNorm * TREE_RADIUS * rand(0.92, 1.05);
-          const angle = i * 2.39996 + rand(-0.15, 0.15);
+          const angle = i * 2.39996 + rand(-0.14, 0.14);
           const tx = Math.cos(angle) * r;
           const tz = Math.sin(angle) * r;
           const sp = randomSpherePoint(160, 450);
 
-          ornamentList.push({
+          treeParticles.push({
             tx, ty: y, tz,
             sx: sp.x, sy: sp.y, sz: sp.z,
-            size: rand(10.5, 17.5),
+            size: rand(12, 19),
+            baseAlpha: rand(0.82, 1.0),
             phase: rand(0, Math.PI * 2),
-            color: theme.ornamentColors[i % theme.ornamentColors.length]
-          });
-        }
-
-        // 5. Anamorphic Twinkling Sparkle Flares (~36 crystal highlights)
-        for (let i = 0; i < 36; i++) {
-          const hNorm = rand(0.12, 0.96);
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * rand(0.88, 1.06);
-          const angle = i * 2.39996 + 0.7;
-          const sp = randomSpherePoint(170, 470);
-          flareAnchors.push({
-            tx: Math.cos(angle) * r,
-            ty: y,
-            tz: Math.sin(angle) * r,
-            sx: sp.x, sy: sp.y, sz: sp.z,
-            phase: rand(0, Math.PI * 2),
-            speed: rand(1.4, 3.0),
-            size: rand(16, 30),
-            color: pick(theme.ribbonColors)
+            twinkleSpeed: rand(1.4, 3.2),
+            color: theme.ornamentColors[i % theme.ornamentColors.length],
+            kind: 'orb'
           });
         }
 
         buildTopperParticles();
 
-        // 6. Concentric Galaxy Floor Rings (3 orbital bands + ground glow)
+        // 4. Milky Way Galaxy Base Rings (2,100 fine pinpoint stars)
         ringParticles = [];
         const rings = [
-          { rMin: 185, rMax: 238, count: 620, speed: 0.24 },
-          { rMin: 256, rMax: 320, count: 560, speed: -0.17 },
-          { rMin: 338, rMax: 420, count: 440, speed: 0.11 }
+          { rMin: 185, rMax: 238, count: 780, speed: 0.24 },
+          { rMin: 256, rMax: 320, count: 720, speed: -0.17 },
+          { rMin: 338, rMax: 420, count: 600, speed: 0.11 }
         ];
         rings.forEach((ring, rIdx) => {
           for (let i = 0; i < ring.count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const radius = rand(ring.rMin, ring.rMax);
-            const yOffset = rand(-4, 6) + Math.sin(angle * 3 + rIdx) * 3;
+            const radius = rand(ring.rMin, ring.rMax) + Math.sin(angle * 2 + rIdx) * 8;
+            const yOffset = rand(-4, 5) + Math.sin(angle * 3 + rIdx) * 2.5;
             ringParticles.push({
               angle,
               radius,
               y: TREE_BASE_Y + 18 + yOffset,
               speed: ring.speed,
-              size: rand(2.0, 5.0),
-              alpha: rand(0.25, 0.9),
+              size: rand(2.2, 5.2),
+              alpha: rand(0.28, 0.92),
               phase: rand(0, Math.PI * 2),
               color: pick(theme.ringColors)
             });
           }
         });
 
-        // 7. Midground Falling Snow + Foreground Soft Bokeh Orbs
+        // 5. Falling 3D Snow
         snowParticles = [];
-        for (let i = 0; i < 210; i++) {
+        for (let i = 0; i < 220; i++) {
           snowParticles.push({
             x: rand(-540, 540),
             y: rand(-430, 330),
@@ -1074,37 +935,24 @@
             vy: rand(22, 54),
             vx: rand(-9, 9),
             swayPhase: rand(0, Math.PI * 2),
-            size: rand(2.4, 5.8),
-            alpha: rand(0.25, 0.78)
+            size: rand(2.6, 6.2),
+            alpha: rand(0.26, 0.78)
           });
         }
 
-        bokehSnow = [];
-        for (let i = 0; i < 18; i++) {
-          bokehSnow.push({
-            x: Math.random(),
-            y: Math.random(),
-            vy: rand(0.015, 0.038),
-            vx: rand(-0.008, 0.008),
-            size: rand(28, 72),
-            alpha: rand(0.04, 0.11),
-            phase: rand(0, Math.PI * 2)
-          });
-        }
-
-        // 8. Rising Golden Stardust
+        // 6. Rising Stardust Embers
         emberParticles = [];
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 70; i++) {
           const r = rand(35, 250);
           const ang = Math.random() * Math.PI * 2;
           emberParticles.push({
             x: Math.cos(ang) * r,
             y: rand(-230, 240),
             z: Math.sin(ang) * r,
-            vy: rand(18, 44),
+            vy: rand(16, 40),
             phase: rand(0, Math.PI * 2),
-            size: rand(3.2, 7.2),
-            alpha: rand(0.32, 0.85)
+            size: rand(3.5, 7.2),
+            alpha: rand(0.3, 0.82)
           });
         }
       }
@@ -1131,7 +979,7 @@
               ty: TREE_TOP_Y - 21 + py,
               tz: rand(-4, 4),
               sx: sp.x, sy: sp.y - 160, sz: sp.z,
-              size: rand(3.0, 5.8),
+              size: rand(3.4, 6.4),
               phase: rand(0, Math.PI * 2)
             });
           }
@@ -1148,7 +996,7 @@
               ty: TREE_TOP_Y - 26 + hy * scale,
               tz: rand(-4, 4),
               sx: sp.x, sy: sp.y - 160, sz: sp.z,
-              size: i < 42 ? rand(2.2, 4.0) : rand(2.8, 5.0),
+              size: i < 42 ? rand(2.6, 4.4) : rand(3.4, 5.8),
               phase: rand(0, Math.PI * 2)
             });
           }
@@ -1171,14 +1019,9 @@
           const angle = idx * 2.39996;
           const sp = randomSpherePoint(190, 360);
           photoFrames.push({
-            img,
-            url,
-            tx: Math.cos(angle) * r,
-            ty: y,
-            tz: Math.sin(angle) * r,
-            sx: sp.x,
-            sy: sp.y,
-            sz: sp.z,
+            img, url,
+            tx: Math.cos(angle) * r, ty: y, tz: Math.sin(angle) * r,
+            sx: sp.x, sy: sp.y, sz: sp.z,
             tilt: rand(-0.14, 0.14),
             screenRect: null
           });
@@ -1202,23 +1045,19 @@
 
       function spawnBurst(screenX, screenY) {
         const theme = THEMES[currentThemeKey];
-        for (let i = 0; i < 32; i++) {
+        for (let i = 0; i < 30; i++) {
           const ang = Math.random() * Math.PI * 2;
-          const spd = rand(45, 190);
+          const spd = rand(45, 180);
           bursts.push({
-            x: screenX,
-            y: screenY,
-            vx: Math.cos(ang) * spd,
-            vy: Math.sin(ang) * spd,
-            life: 1,
-            decay: rand(0.85, 1.6),
-            size: rand(6, 15),
+            x: screenX, y: screenY,
+            vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+            life: 1, decay: rand(0.9, 1.65),
+            size: rand(7, 15),
             color: pick(theme.ribbonColors)
           });
         }
       }
 
-      // ==================== 3D Projection ====================
       function projectPoint(x, y, z, sinY, cosY, sinX, cosX, fov, dist, cx, cy) {
         const rx = x * cosY - z * sinY;
         const rz = x * sinY + z * cosY;
@@ -1231,7 +1070,6 @@
         return { sx: cx + rx * scale, sy: cy + ry * scale, scale, depth: zCam };
       }
 
-      // ==================== Render Step ====================
       function resize() {
         state.width = window.innerWidth;
         state.height = window.innerHeight;
@@ -1257,7 +1095,7 @@
         state.zoom += (state.targetZoom - state.zoom) * Math.min(1, dt * 7);
         state.scatter += (state.targetScatter - state.scatter) * Math.min(1, dt * 3.8);
 
-        // 1. Deep Atmospheric Night Sky
+        // 1. Night Sky
         ctx.globalCompositeOperation = 'source-over';
         const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
         bgGrad.addColorStop(0, theme.bgTop);
@@ -1269,10 +1107,10 @@
         const isPortrait = w < h;
         const cx = w * 0.5;
         const cy = h * (isPortrait ? 0.46 : 0.465);
-        const haloRadius = Math.min(w, h) * 0.5;
+        const haloRadius = Math.min(w, h) * 0.48;
         const halo = ctx.createRadialGradient(cx, cy, 12, cx, cy, haloRadius);
-        halo.addColorStop(0, hexToRgba(theme.accent, 0.16));
-        halo.addColorStop(0.48, hexToRgba(theme.accent, 0.045));
+        halo.addColorStop(0, hexToRgba(theme.accent, 0.14));
+        halo.addColorStop(0.48, hexToRgba(theme.accent, 0.04));
         halo.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = halo;
         ctx.fillRect(0, 0, w, h);
@@ -1295,18 +1133,19 @@
         const sinX = Math.sin(state.rotX);
         const cosX = Math.cos(state.rotX);
 
-        // Warm floor reflection beneath tree
         const sc = state.scatter;
+
+        // Subtle warm ground reflection inside galaxy rings
         const floorCenter = projectPoint(0, TREE_BASE_Y + 22, 0, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
         if (floorCenter && sc < 0.8) {
-          const rx = 280 * floorCenter.scale;
-          const ry = 76 * floorCenter.scale;
+          const rx = 250 * floorCenter.scale;
+          const ry = 68 * floorCenter.scale;
           ctx.save();
           ctx.translate(floorCenter.sx, floorCenter.sy);
           ctx.scale(1, ry / rx);
           const fGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, rx);
-          fGrad.addColorStop(0, hexToRgba(theme.accent, 0.22 * (1 - sc)));
-          fGrad.addColorStop(0.5, hexToRgba(theme.accent, 0.07 * (1 - sc)));
+          fGrad.addColorStop(0, hexToRgba(theme.accent, 0.14 * (1 - sc)));
+          fGrad.addColorStop(0.55, hexToRgba(theme.accent, 0.04 * (1 - sc)));
           fGrad.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.fillStyle = fGrad;
           ctx.beginPath();
@@ -1315,26 +1154,26 @@
           ctx.restore();
         }
 
-        // 3. Concentric Galaxy Floor Rings
+        // 3. Milky Way Galaxy Floor Rings
         const ringAlphaFactor = 1 - sc * 0.65;
         for (let i = 0; i < ringParticles.length; i++) {
           const rp = ringParticles[i];
           rp.angle += rp.speed * dt;
-          const waveY = rp.y + Math.sin(state.time * 1.8 + rp.phase) * 3;
+          const waveY = rp.y + Math.sin(state.time * 1.8 + rp.phase) * 2.5;
           const x = Math.cos(rp.angle) * rp.radius * (1 + sc * 0.5);
           const z = Math.sin(rp.angle) * rp.radius * (1 + sc * 0.5);
           const p = projectPoint(x, waveY, z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
           if (!p) continue;
-          const depthAtten = Math.max(0.35, Math.min(1.15, (camDist + 220 - p.depth) / 420));
+          const depthAtten = Math.max(0.4, Math.min(1.15, (camDist + 220 - p.depth) / 420));
           const twinkle = 0.6 + 0.4 * Math.sin(state.time * 2.5 + rp.phase);
           const sz = rp.size * p.scale * 2.3;
           if (sz < 0.5) continue;
-          const sprite = getGlowSprite(rp.color, true);
+          const sprite = getPinpointSprite(rp.color);
           ctx.globalAlpha = Math.min(1, rp.alpha * twinkle * ringAlphaFactor * depthAtten);
           ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
         }
 
-        // 3.5 Dual-pass Luminous Spiral Silk Ribbons + Traveling Comet Sparks
+        // 3.5 Delicate Faint Silk Trail + Traveling Comet Sparks along Spiral Ribbons
         if (sc < 0.45) {
           const ribAlpha = 1 - sc / 0.45;
           for (let sIdx = 0; sIdx < ribbonCurves.length; sIdx++) {
@@ -1349,21 +1188,16 @@
               else ctx.lineTo(p.sx, p.sy);
             }
             ctx.save();
-            ctx.globalAlpha = ribAlpha * 0.72;
+            ctx.globalAlpha = ribAlpha * 0.75;
             ctx.strokeStyle = theme.ribbonGlow;
-            ctx.lineWidth = 5.5 * state.zoom;
-            ctx.stroke();
-
-            ctx.globalAlpha = ribAlpha * 0.85;
-            ctx.strokeStyle = theme.ribbonCore;
-            ctx.lineWidth = 1.6 * state.zoom;
+            ctx.lineWidth = 2.2 * state.zoom;
             ctx.stroke();
             ctx.restore();
 
-            // Traveling bright comet beads gliding upward along the spiral
-            const cometCount = 5;
+            // Subtle bright stardust comets gliding up the spiral
+            const cometCount = 4;
             for (let c = 0; c < cometCount; c++) {
-              const u = (((c / cometCount) - state.time * 0.11) % 1 + 1) % 1;
+              const u = (((c / cometCount) - state.time * 0.09) % 1 + 1) % 1;
               const idxF = u * (curve.length - 1);
               const i0 = Math.floor(idxF);
               const i1 = Math.min(curve.length - 1, i0 + 1);
@@ -1375,16 +1209,16 @@
               };
               const p = projectPoint(pt.x, pt.y, pt.z, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
               if (p) {
-                const sz = 22 * p.scale;
-                const sp = getGlowSprite('#ffffff', false);
-                ctx.globalAlpha = ribAlpha * 0.95;
+                const sz = 18 * p.scale;
+                const sp = getOrbSprite('#ffffff');
+                ctx.globalAlpha = ribAlpha * 0.85;
                 ctx.drawImage(sp, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
               }
             }
           }
         }
 
-        // 4. Volumetric Pine Boughs + Fairy Lights (with true 3D front/back depth attenuation)
+        // 4. Pure Luminous Tree Stardust + Fairy Light Orbs (depth-attenuated 3D glow!)
         const swirl = sc * 1.65;
         const swSin = Math.sin(swirl);
         const swCos = Math.cos(swirl);
@@ -1405,46 +1239,19 @@
           const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
           if (!p) continue;
 
-          // Front particles shine brighter; back particles recede softly -> true 3D solid look
-          const depthAtten = Math.max(0.34, Math.min(1.22, (camDist + 140 - p.depth) / 280));
+          const depthAtten = Math.max(0.42, Math.min(1.18, (camDist + 140 - p.depth) / 280));
           const twinkle = 0.62 + 0.38 * Math.sin(state.time * tp.twinkleSpeed + tp.phase);
-          const sz = tp.size * p.scale * 2.25;
-          if (sz < 0.55) continue;
+          const sz = tp.size * p.scale * (tp.kind === 'orb' ? 1.85 : 2.35);
+          if (sz < 0.5) continue;
 
-          const sprite = getGlowSprite(tp.color, tp.soft);
+          const sprite = tp.kind === 'orb' ? getOrbSprite(tp.color) : getPinpointSprite(tp.color);
           ctx.globalAlpha = Math.min(1, tp.baseAlpha * twinkle * depthAtten);
-          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
-        }
-
-        // 4.2 3D Shaded Glass Ornament Baubles (depth-sorted)
-        ctx.globalCompositeOperation = 'source-over';
-        const projOrnaments = [];
-        for (let i = 0; i < ornamentList.length; i++) {
-          const ob = ornamentList[i];
-          let px = ob.tx + (ob.sx - ob.tx) * sc;
-          let py = ob.ty + (ob.sy - ob.ty) * sc;
-          let pz = ob.tz + (ob.sz - ob.tz) * sc;
-          if (sc > 0.01) {
-            const nx = px * swCos - pz * swSin;
-            const nz = px * swSin + pz * swCos;
-            px = nx;
-            pz = nz;
-          }
-          const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-          if (p) projOrnaments.push({ ob, p });
-        }
-        projOrnaments.sort((a, b) => b.p.depth - a.p.depth);
-        for (let i = 0; i < projOrnaments.length; i++) {
-          const { ob, p } = projOrnaments[i];
-          const sz = ob.size * p.scale * 1.45;
-          const depthAtten = Math.max(0.45, Math.min(1.0, (camDist + 160 - p.depth) / 300));
-          const sprite = getBaubleSprite(ob.color);
-          ctx.globalAlpha = depthAtten * 0.96;
           ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
         }
 
         // 4.5 Polaroid Photo Frames
         if (photoFrames.length > 0) {
+          ctx.globalCompositeOperation = 'source-over';
           const projectedFrames = [];
           for (let i = 0; i < photoFrames.length; i++) {
             const pf = photoFrames[i];
@@ -1486,34 +1293,10 @@
             ctx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
             ctx.restore();
           }
+          ctx.globalCompositeOperation = 'lighter';
         }
 
-        ctx.globalCompositeOperation = 'lighter';
-
-        // 4.8 Anamorphic 4-Point Twinkling Starburst Flares
-        for (let i = 0; i < flareAnchors.length; i++) {
-          const fa = flareAnchors[i];
-          const pulse = Math.max(0, Math.sin(state.time * fa.speed + fa.phase));
-          if (pulse < 0.25) continue;
-          let px = fa.tx + (fa.sx - fa.tx) * sc;
-          let py = fa.ty + (fa.sy - fa.ty) * sc;
-          let pz = fa.tz + (fa.sz - fa.tz) * sc;
-          if (sc > 0.01) {
-            const nx = px * swCos - pz * swSin;
-            const nz = px * swSin + pz * swCos;
-            px = nx;
-            pz = nz;
-          }
-          const p = projectPoint(px, py, pz, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
-          if (!p) continue;
-          if (p.depth > camDist + 40) continue; // Only sparkle on front-facing side
-          const sz = fa.size * p.scale * Math.pow(pulse, 1.8);
-          const sprite = getStarFlareSprite(fa.color);
-          ctx.globalAlpha = Math.pow(pulse, 2.2) * 0.92;
-          ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
-        }
-
-        // 5. Tree Topper (gentle swaying facing viewer so Star & Heart always read cleanly)
+        // 5. Tree Topper
         const topAngle = Math.sin(state.time * 1.1) * 0.28 * (1 - sc) + state.rotY * sc;
         const topSinY = Math.sin(topAngle);
         const topCosY = Math.cos(topAngle);
@@ -1526,9 +1309,9 @@
           const p = projectPoint(px, py, pz, topSinY, topCosY, sinX, cosX, fov, camDist, cx, cy);
           if (!p) continue;
           const tw = 0.76 + 0.24 * Math.sin(state.time * 4 + tp.phase);
-          const sz = tp.size * p.scale * 2.05;
-          const sprite = getGlowSprite(theme.topperGlow, true);
-          ctx.globalAlpha = tw * (topperMode === 'heart' ? 0.88 : 0.95);
+          const sz = tp.size * p.scale * 2.1;
+          const sprite = getPinpointSprite(theme.topperGlow);
+          ctx.globalAlpha = tw * (topperMode === 'heart' ? 0.9 : 0.96);
           ctx.drawImage(sprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
         }
 
@@ -1536,22 +1319,36 @@
           const topCenter = projectPoint(0, TREE_TOP_Y - 24, 0, topSinY, topCosY, sinX, cosX, fov, camDist, cx, cy);
           if (topCenter) {
             const pulse = 0.88 + 0.14 * Math.sin(state.time * 3.2);
-            const flareSize = (topperMode === 'heart' ? 70 : 92) * topCenter.scale * pulse * (1 - sc);
-            const coreSprite = getGlowSprite(theme.topperGlow, true);
-            ctx.globalAlpha = (topperMode === 'heart' ? 0.4 : 0.78) * (1 - sc);
+            const flareSize = (topperMode === 'heart' ? 68 : 88) * topCenter.scale * pulse * (1 - sc);
+            const coreSprite = getOrbSprite(theme.topperGlow);
+            ctx.globalAlpha = (topperMode === 'heart' ? 0.36 : 0.75) * (1 - sc);
             ctx.drawImage(coreSprite, topCenter.sx - flareSize * 0.5, topCenter.sy - flareSize * 0.5, flareSize, flareSize);
 
             if (topperMode === 'star') {
-              const starFlare = getStarFlareSprite(theme.topperGlow);
-              const sfSize = 86 * topCenter.scale * pulse * (1 - sc);
-              ctx.globalAlpha = 0.88 * (1 - sc);
-              ctx.drawImage(starFlare, topCenter.sx - sfSize * 0.5, topCenter.sy - sfSize * 0.5, sfSize, sfSize);
+              ctx.save();
+              ctx.translate(topCenter.sx, topCenter.sy);
+              ctx.globalAlpha = 0.54 * (1 - sc) * pulse;
+              const rayLen = 48 * topCenter.scale * pulse;
+              const rayGradH = ctx.createLinearGradient(-rayLen, 0, rayLen, 0);
+              rayGradH.addColorStop(0, 'rgba(255,255,255,0)');
+              rayGradH.addColorStop(0.5, '#ffffff');
+              rayGradH.addColorStop(1, 'rgba(255,255,255,0)');
+              ctx.fillStyle = rayGradH;
+              ctx.fillRect(-rayLen, -1.1, rayLen * 2, 2.2);
+
+              const rayGradV = ctx.createLinearGradient(0, -rayLen, 0, rayLen);
+              rayGradV.addColorStop(0, 'rgba(255,255,255,0)');
+              rayGradV.addColorStop(0.5, '#ffffff');
+              rayGradV.addColorStop(1, 'rgba(255,255,255,0)');
+              ctx.fillStyle = rayGradV;
+              ctx.fillRect(-1.1, -rayLen, 2.2, rayLen * 2);
+              ctx.restore();
             }
           }
         }
 
         // 6. Rising Stardust
-        const emberSprite = getGlowSprite(theme.accent, true);
+        const emberSprite = getPinpointSprite(theme.accent);
         for (let i = 0; i < emberParticles.length; i++) {
           const ep = emberParticles[i];
           ep.y -= ep.vy * dt;
@@ -1564,8 +1361,8 @@
           ctx.drawImage(emberSprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
         }
 
-        // 7. Falling 3D Snow
-        const snowSprite = getGlowSprite('#d8eeff', true);
+        // 7. Falling Snow
+        const snowSprite = getPinpointSprite('#d8eeff');
         for (let i = 0; i < snowParticles.length; i++) {
           const sp = snowParticles[i];
           sp.y += sp.vy * dt;
@@ -1583,19 +1380,6 @@
           ctx.drawImage(snowSprite, p.sx - sz * 0.5, p.sy - sz * 0.5, sz, sz);
         }
 
-        // 7.5 Foreground Soft-Focus Bokeh Orbs (cinematic depth-of-field)
-        const bokehSprite = getGlowSprite(theme.accent, true);
-        for (let i = 0; i < bokehSnow.length; i++) {
-          const bk = bokehSnow[i];
-          bk.y += bk.vy * dt;
-          bk.x += (bk.vx + Math.sin(state.time * 0.6 + bk.phase) * 0.004) * dt;
-          if (bk.y > 1.08) { bk.y = -0.08; bk.x = Math.random(); }
-          if (bk.x < -0.08) bk.x = 1.08;
-          if (bk.x > 1.08) bk.x = -0.08;
-          ctx.globalAlpha = bk.alpha * (0.7 + 0.3 * Math.sin(state.time * 1.4 + bk.phase));
-          ctx.drawImage(bokehSprite, bk.x * w - bk.size * 0.5, bk.y * h - bk.size * 0.5, bk.size, bk.size);
-        }
-
         // 8. Click Sparkle Bursts
         for (let i = bursts.length - 1; i >= 0; i--) {
           const b = bursts[i];
@@ -1605,7 +1389,7 @@
           b.y += b.vy * dt;
           b.vx *= 0.96;
           b.vy = b.vy * 0.96 + 35 * dt;
-          const sprite = getGlowSprite(b.color, false);
+          const sprite = getOrbSprite(b.color);
           const sz = b.size * b.life * 2;
           ctx.globalAlpha = b.life;
           ctx.drawImage(sprite, b.x - sz * 0.5, b.y - sz * 0.5, sz, sz);
@@ -2087,7 +1871,6 @@
 
       btnGesture.addEventListener('click', startGestureControl);
 
-      // ==================== Demo API ====================
       window.__treeDemo = {
         enableManual() { state.manualMode = true; },
         step(dt) { renderStep(dt); },
@@ -2098,7 +1881,6 @@
         burst(x, y) { spawnBurst(x, y); }
       };
 
-      // ==================== Start ====================
       window.addEventListener('resize', resize);
       resize();
       setTopper(topperMode);
