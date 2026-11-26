@@ -1319,34 +1319,79 @@
           pushPt(bx0, by, bz0, sx, sy, sz, '#fff8e8', 11.5, 0.85, b, 2.8, 0, 0, 1, 0.22 + (1.0 - hNorm) * 0.65);
         }
 
-        // 6c. Gift Box Stardust Pockets (for nebula gather/scatter transition of the 3D shaded gift boxes)
+        // 6c. 3 Delicate Luminous Stardust Gift Boxes around the outer tree skirt (100% pure stardust unity)
         const GIFT_BOX_SPECS = [
-          { ang: 0.52, rad: 192, w: 38, h: 28, d: 36, yaw: 0.40, yLift: 0, colIdx: 0 },
-          { ang: 2.08, rad: 196, w: 42, h: 30, d: 38, yaw: -0.35, yLift: 0, colIdx: 1 },
-          { ang: 2.08, rad: 196, w: 26, h: 20, d: 26, yaw: 0.25, yLift: 30, colIdx: 2 },
-          { ang: 3.68, rad: 206, w: 34, h: 26, d: 32, yaw: 0.62, yLift: 0, colIdx: 3 },
-          { ang: 5.12, rad: 202, w: 32, h: 32, d: 32, yaw: -0.50, yLift: 0, colIdx: 4 }
+          { ang: 0.75, rad: 196, w: 36, h: 27, d: 34, yaw: 0.42, colIdx: 0 },
+          { ang: 2.85, rad: 200, w: 38, h: 29, d: 34, yaw: -0.36, colIdx: 1 },
+          { ang: 4.95, rad: 198, w: 34, h: 25, d: 32, yaw: 0.58, colIdx: 2 }
         ];
+        const giftCenters = [];
         GIFT_BOX_SPECS.forEach((g, gIdx) => {
           const cx0 = Math.cos(g.ang) * g.rad;
           const cz0 = Math.sin(g.ang) * g.rad;
-          const cy0 = TREE_BASE_Y + 12 - g.yLift - g.h * 0.5;
+          giftCenters.push({ x: cx0, z: cz0, r: Math.max(g.w, g.d) * 0.92 });
+          const baseY = TREE_BASE_Y + 13;
+          const cy0 = baseY - g.h * 0.5;
+          const cs = Math.cos(g.yaw), sn = Math.sin(g.yaw);
           const boxCol = theme.giftColors[g.colIdx % theme.giftColors.length];
-          for (let i = 0; i < 42; i++) {
+          const ribCol = theme.ribbonColors[1] || '#fff4d8';
+          const order = 0.22 + gIdx * 0.04;
+
+          const pushBoxPt = (lx, ly, lz, col, sz, al, shape = 0) => {
+            const wx = cx0 + lx * cs - lz * sn;
+            const wz = cz0 + lx * sn + lz * cs;
+            const wy = cy0 + ly;
             const [sx, sy, sz0] = randomSpherePoint(200, 520);
-            pushPt(
-              cx0 + rand(-g.w * 0.4, g.w * 0.4),
-              cy0 + rand(-g.h * 0.4, g.h * 0.4),
-              cz0 + rand(-g.d * 0.4, g.d * 0.4),
-              sx, sy + 90, sz0,
-              i % 3 === 0 ? theme.accent : boxCol,
-              rand(4.5, 8.5), rand(0.18, 0.42), gIdx + i * 0.2, 2.0,
-              0, 0, 2, 0.20 + gIdx * 0.03
-            );
+            pushPt(wx, wy, wz, sx, sy + 90, sz0, col, sz, al, gIdx + lx * 0.08, 1.8, 0, 0, shape, order);
+          };
+
+          const hw = g.w * 0.5, hh = g.h * 0.5, hd = g.d * 0.5;
+          const lw = hw + 1.8, ld = hd + 1.8;
+
+          // Fine crisp stardust box edges + lid overhang rim
+          const drawEdge = (p0, p1, steps, col, sz, al) => {
+            for (let k = 0; k <= steps; k++) {
+              const t = k / steps;
+              pushBoxPt(p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t, p0[2] + (p1[2] - p0[2]) * t, col, sz, al);
+            }
+          };
+          const botC = [[-hw, hh, -hd], [hw, hh, -hd], [hw, hh, hd], [-hw, hh, hd]];
+          const topC = [[-lw, -hh, -ld], [lw, -hh, -ld], [lw, -hh, ld], [-lw, -hh, ld]];
+          for (let e = 0; e < 4; e++) {
+            const n = (e + 1) % 4;
+            drawEdge(botC[e], botC[n], 10, boxCol, 4.0, 0.68);
+            drawEdge(topC[e], topC[n], 12, boxCol, 4.4, 0.82);
+            drawEdge([botC[e][0], hh, botC[e][2]], [botC[e][0], -hh + 1.5, botC[e][2]], 8, boxCol, 4.0, 0.66);
           }
+
+          // Subtle translucent color glow inside the crystal box (zero noisy face grid!)
+          pushBoxPt(0, 0, 0, boxCol, 38, 0.28, 2);
+          pushBoxPt(0, -hh * 0.3, 0, boxCol, 24, 0.24, 2);
+
+          // Delicate glowing satin cross ribbons & sculpted 3D bow
+          for (let k = 0; k <= 14; k++) {
+            const t = (k / 14) * 2 - 1;
+            pushBoxPt(t * lw, -hh - 0.5, 0, ribCol, 4.1, 0.88);
+            pushBoxPt(0, -hh - 0.5, t * ld, ribCol, 4.1, 0.88);
+          }
+          for (let k = 0; k <= 8; k++) {
+            const ly = ((k / 8) * 2 - 1) * hh;
+            pushBoxPt(0, ly, hd + 0.5, ribCol, 3.8, 0.78);
+            pushBoxPt(0, ly, -hd - 0.5, ribCol, 3.8, 0.78);
+            pushBoxPt(hw + 0.5, ly, 0, ribCol, 3.8, 0.78);
+            pushBoxPt(-hw - 0.5, ly, 0, ribCol, 3.8, 0.78);
+          }
+          for (let k = 0; k < 26; k++) {
+            const t = (k / 26) * Math.PI * 2;
+            const bx = Math.sin(t) * 9.5;
+            const by = -hh - 2.0 - Math.abs(Math.sin(t)) * 5.2;
+            const bz = Math.sin(2 * t) * 4.2;
+            pushBoxPt(bx, by, bz, ribCol, 4.2, 0.90);
+          }
+          pushBoxPt(0, -hh - 2.0, 0, '#ffffff', 9.5, 0.90, 1);
         });
 
-        // 7. Wide Milky Way Spiral Galaxy Base (5,200 particles)
+        // 7. Wide Milky Way Spiral Galaxy Base (5,200 particles, soft pocket around gift boxes)
         const rings = [
           { rMin: 164, rMax: 212, count: 1850, speed: 0.24 },
           { rMin: 222, rMax: 280, count: 1750, speed: -0.17 },
@@ -1356,10 +1401,16 @@
           for (let i = 0; i < ring.count; i++) {
             const ang = Math.random() * Math.PI * 2;
             const radius = rand(ring.rMin, ring.rMax) + Math.sin(ang * 2 + rIdx) * 9;
+            const gx = Math.cos(ang) * radius, gz = Math.sin(ang) * radius;
+            let nearGift = false;
+            for (const gc of giftCenters) {
+              if (Math.hypot(gx - gc.x, gz - gc.z) < gc.r) { nearGift = true; break; }
+            }
+            if (nearGift && Math.random() < 0.82) continue;
             const yOffset = rand(-3.5, 4.5) + Math.sin(ang * 3 + rIdx) * 2.0;
             const [sx, sy, sz] = randomSpherePoint(240, 540);
             pushPt(
-              Math.cos(ang) * radius, TREE_BASE_Y + 14 + yOffset, Math.sin(ang) * radius,
+              gx, TREE_BASE_Y + 14 + yOffset, gz,
               sx, sy + 120, sz,
               pick(theme.ringColors), rand(4.6, 10.2), rand(0.35, 0.92), rand(0, 6.28), rand(1.6, 3.6),
               1, ring.speed, 0, rIdx * 0.06 + rand(0, 0.08)
@@ -2047,7 +2098,7 @@
         return c.toDataURL('image/jpeg', 0.90);
       }
 
-      function setPolaroidItems(items) {
+      function setPolaroidItems(items, isPreset = false) {
         photoFrames = [];
         const list = items.slice(0, 18);
         list.forEach((item, idx) => {
@@ -2056,13 +2107,14 @@
           const total = list.length;
           const hNorm = 0.34 + (idx / Math.max(1, total - 1)) * 0.48;
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * 1.15 + 18;
+          const r = hNorm * TREE_RADIUS * 1.14 + 16;
           const angle = idx * 2.48 + 0.5;
           const [sx, sy, sz] = randomSpherePoint(190, 360);
           photoFrames.push({
             img,
             url: item.url,
             caption: item.caption || 'Winter Memories ♥',
+            isPreset,
             tx: Math.cos(angle) * r, ty: y, tz: Math.sin(angle) * r,
             sx, sy, sz,
             tilt: rand(-0.11, 0.11),
@@ -2078,8 +2130,8 @@
           url: renderArtCardUrl(spec, i),
           caption: spec.caption
         }));
-        setPolaroidItems(cards);
-        if (announce) showToast('Loaded 6 starlight Polaroid keepsakes');
+        setPolaroidItems(cards, true);
+        if (announce) showToast('Loaded 6 starlight keepsake ornaments');
       }
 
       function layoutPhotoFrames(files) {
@@ -2089,7 +2141,7 @@
           url: URL.createObjectURL(file),
           caption: file.name ? file.name.replace(/\.[^.]+$/, '') : `Memory #${i + 1}`
         }));
-        setPolaroidItems(items);
+        setPolaroidItems(items, false);
         showToast(`Hung ${list.length} Polaroid photos on the tree! Tap any photo to zoom.`, 3400);
       }
 
@@ -2252,209 +2304,6 @@
         ctx.closePath();
       }
 
-      function shadeHex(hex, mul) {
-        const [r, g, b] = hexToRgb01(hex);
-        const rr = Math.min(242, Math.max(22, Math.round(r * 255 * mul)));
-        const gg = Math.min(242, Math.max(22, Math.round(g * 255 * mul)));
-        const bb = Math.min(242, Math.max(22, Math.round(b * 255 * mul)));
-        return `rgb(${rr},${gg},${bb})`;
-      }
-
-      const RENDER_GIFT_BOXES = [
-        { ang: 0.52, rad: 192, w: 38, h: 28, d: 36, yaw: 0.40, yLift: 0, colIdx: 0 },
-        { ang: 2.08, rad: 196, w: 42, h: 30, d: 38, yaw: -0.35, yLift: 0, colIdx: 1 },
-        { ang: 2.08, rad: 196, w: 26, h: 20, d: 26, yaw: 0.25, yLift: 30, colIdx: 2 },
-        { ang: 3.68, rad: 206, w: 34, h: 26, d: 32, yaw: 0.62, yLift: 0, colIdx: 3 },
-        { ang: 5.12, rad: 202, w: 32, h: 32, d: 32, yaw: -0.50, yLift: 0, colIdx: 4 }
-      ];
-
-      function renderLitGiftBoxes(ctx, sinY, cosY, sinX, cosX, fov, dist, cx, cy) {
-        const introAlpha = Math.max(0, Math.min(1, (state.introProgress - 0.58) / 0.36));
-        const scatterFade = Math.max(0, 1 - state.scatter * 2.1);
-        const masterAlphaBase = introAlpha * scatterFade;
-        if (masterAlphaBase <= 0.02) return;
-
-        const theme = THEMES[currentThemeKey];
-        const ribCol = theme.ribbonColors[1] || '#ffe9b8';
-        const keyLight = [-0.45, -0.78, 0.44];
-        const kLen = Math.hypot(keyLight[0], keyLight[1], keyLight[2]);
-        const lx = keyLight[0] / kLen, ly = keyLight[1] / kLen, lz = keyLight[2] / kLen;
-
-        const xform = (wx, wy, wz) => {
-          const rx = wx * cosY - wz * sinY;
-          const rz = wx * sinY + wz * cosY;
-          const ry = wy * cosX - rz * sinX;
-          const rz2 = wy * sinX + rz * cosX;
-          return { x: rx, y: ry, z: rz2, depth: rz2 + dist };
-        };
-
-        const to2D = (v) => {
-          if (v.depth <= 40) return null;
-          const sc = fov / v.depth;
-          return { sx: cx + v.x * sc, sy: cy + v.y * sc, scale: sc, depth: v.depth };
-        };
-
-        // Sort boxes back-to-front by center depth (and yLift so top stacked box renders after bottom box)
-        const boxesSorted = RENDER_GIFT_BOXES.map((g, idx) => {
-          const bx = Math.cos(g.ang) * g.rad;
-          const bz = Math.sin(g.ang) * g.rad;
-          const by = TREE_BASE_Y + 12 - g.yLift - g.h * 0.5;
-          const cCam = xform(bx, by, bz);
-          const behindCone = cCam.z > 20 && Math.abs(cCam.x) < 165;
-          const boxAlpha = masterAlphaBase * (behindCone ? 0.34 : (cCam.z > 0 ? 0.68 : 1.0));
-          return { g, idx, bx, by, bz, depth: cCam.depth, boxAlpha };
-        }).sort((a, b) => (b.depth - a.depth) || (a.g.yLift - b.g.yLift));
-
-        const drawPrism = (bx, by, bz, w, h, d, yaw, baseHex, isLid, boxAlpha) => {
-          const hw = w * 0.5, hh = h * 0.5, hd = d * 0.5;
-          const cyaw = Math.cos(yaw), syaw = Math.sin(yaw);
-          const localToWorld = (px, py, pz) => ({
-            x: bx + px * cyaw - pz * syaw,
-            y: by + py,
-            z: bz + px * syaw + pz * cyaw
-          });
-          const pts3D = [
-            [-hw,-hh, hd],[ hw,-hh, hd],[ hw, hh, hd],[-hw, hh, hd], // 0..3 front (+z)
-            [-hw,-hh,-hd],[ hw,-hh,-hd],[ hw, hh,-hd],[-hw, hh,-hd]  // 4..7 back (-z)
-          ].map(p => localToWorld(p[0], p[1], p[2])).map(wPt => xform(wPt.x, wPt.y, wPt.z));
-
-          const faces = [
-            { idx: [0, 3, 2, 1], n: [0, 0, 1], rib: 'v' },
-            { idx: [5, 6, 7, 4], n: [0, 0, -1], rib: 'v' },
-            { idx: [1, 2, 6, 5], n: [1, 0, 0], rib: 'v' },
-            { idx: [4, 7, 3, 0], n: [-1, 0, 0], rib: 'v' },
-            { idx: [4, 0, 1, 5], n: [0, -1, 0], rib: 'cross' }
-          ];
-
-          const visFaces = [];
-          for (const f of faces) {
-            const p0 = pts3D[f.idx[0]], p1 = pts3D[f.idx[1]], p2 = pts3D[f.idx[2]];
-            const ux = p1.x - p0.x, uy = p1.y - p0.y, uz = p1.z - p0.z;
-            const vx = p2.x - p0.x, vy = p2.y - p0.y, vz = p2.z - p0.z;
-            const nx = uy * vz - uz * vy;
-            const ny = uz * vx - ux * vz;
-            const nz = ux * vy - uy * vx;
-            const nLen = Math.hypot(nx, ny, nz) || 1;
-            const nux = nx / nLen, nuy = ny / nLen, nuz = nz / nLen;
-            // Camera sits at (0, 0, -dist) looking +Z -> face visible when view vector to face center has dot < 0
-            const fcx = (pts3D[f.idx[0]].x + pts3D[f.idx[2]].x) * 0.5;
-            const fcy = (pts3D[f.idx[0]].y + pts3D[f.idx[2]].y) * 0.5;
-            const fcz = (pts3D[f.idx[0]].z + pts3D[f.idx[2]].z) * 0.5 + dist;
-            if (nux * fcx + nuy * fcy + nuz * fcz >= 0) continue;
-
-            const ndl = Math.max(0, nux * lx + nuy * ly + nuz * lz);
-            const shade = (isLid ? 0.58 : 0.44) + ndl * (isLid ? 0.42 : 0.48);
-            const avgD = (pts3D[f.idx[0]].depth + pts3D[f.idx[1]].depth + pts3D[f.idx[2]].depth + pts3D[f.idx[3]].depth) * 0.25;
-            visFaces.push({ f, shade, avgD, corners: f.idx.map(k => to2D(pts3D[k])) });
-          }
-          visFaces.sort((a, b) => b.avgD - a.avgD);
-
-          for (const vf of visFaces) {
-            if (vf.corners.some(c => !c)) continue;
-            const c = vf.corners;
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(c[0].sx, c[0].sy);
-            ctx.lineTo(c[1].sx, c[1].sy);
-            ctx.lineTo(c[2].sx, c[2].sy);
-            ctx.lineTo(c[3].sx, c[3].sy);
-            ctx.closePath();
-            ctx.fillStyle = shadeHex(baseHex, vf.shade);
-            ctx.globalAlpha = boxAlpha * 0.88;
-            ctx.fill();
-
-            // Subtle lid bevel / specular edge highlight (3D-4)
-            ctx.strokeStyle = shadeHex(baseHex, Math.min(1.28, vf.shade + 0.34));
-            ctx.lineWidth = isLid ? 1.1 : 0.75;
-            ctx.globalAlpha = boxAlpha * (isLid ? 0.68 : 0.42);
-            ctx.stroke();
-
-            // Satin ribbon bands projected directly on the face
-            const drawBand = (u0, u1, v0, v1) => {
-              const lerpPt = (u, v) => {
-                const topX = c[0].sx + (c[3].sx - c[0].sx) * u;
-                const topY = c[0].sy + (c[3].sy - c[0].sy) * u;
-                const botX = c[1].sx + (c[2].sx - c[1].sx) * u;
-                const botY = c[1].sy + (c[2].sy - c[1].sy) * u;
-                return { x: topX + (botX - topX) * v, y: topY + (botY - topY) * v };
-              };
-              const pA = lerpPt(u0, v0), pB = lerpPt(u0, v1), pC = lerpPt(u1, v1), pD = lerpPt(u1, v0);
-              ctx.beginPath();
-              ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y); ctx.lineTo(pC.x, pC.y); ctx.lineTo(pD.x, pD.y);
-              ctx.closePath();
-              ctx.fillStyle = shadeHex(ribCol, 0.72 + vf.shade * 0.38);
-              ctx.globalAlpha = boxAlpha * 0.92;
-              ctx.fill();
-            };
-
-            if (vf.f.rib === 'v') {
-              drawBand(0.41, 0.59, 0.0, 1.0);
-            } else if (vf.f.rib === 'cross') {
-              drawBand(0.41, 0.59, 0.0, 1.0);
-              drawBand(0.0, 1.0, 0.41, 0.59);
-            }
-            ctx.restore();
-          }
-        };
-
-        for (const item of boxesSorted) {
-          const { g, bx, by, bz, boxAlpha } = item;
-          const boxHex = theme.giftColors[g.colIdx % theme.giftColors.length];
-          const baseCenter = to2D(xform(bx, by + g.h * 0.5 + 2, bz));
-
-          // Ground contact shadow + soft glow cushion (3D-2 grounded)
-          if (baseCenter && g.yLift === 0) {
-            ctx.save();
-            ctx.globalAlpha = boxAlpha * 0.45;
-            const sg = ctx.createRadialGradient(baseCenter.sx, baseCenter.sy, 2, baseCenter.sx, baseCenter.sy, g.w * 0.85 * baseCenter.scale);
-            sg.addColorStop(0, 'rgba(2, 3, 10, 0.85)');
-            sg.addColorStop(0.65, hexToRgba(boxHex, 0.20));
-            sg.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = sg;
-            ctx.beginPath();
-            ctx.ellipse(baseCenter.sx, baseCenter.sy, g.w * 0.82 * baseCenter.scale, g.w * 0.34 * baseCenter.scale, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-          }
-
-          // Main box body
-          drawPrism(bx, by, bz, g.w, g.h, g.d, g.yaw, boxHex, false, boxAlpha);
-          // Overhanging lid resting cleanly atop body
-          drawPrism(bx, by - g.h * 0.5 - 2.5, bz, g.w + 5, 7, g.d + 5, g.yaw, boxHex, true, boxAlpha);
-
-          // Sculpted 3D ribbon bow on top of lid
-          const lidTop = to2D(xform(bx, by - g.h * 0.5 - 6.5, bz));
-          if (lidTop) {
-            const sc = lidTop.scale;
-            ctx.save();
-            ctx.translate(lidTop.sx, lidTop.sy);
-            ctx.globalAlpha = boxAlpha * 0.94;
-            ctx.strokeStyle = ribCol;
-            ctx.lineWidth = Math.max(1.8, 2.8 * sc);
-            ctx.lineCap = 'round';
-            ctx.shadowColor = hexToRgba(ribCol, 0.65);
-            ctx.shadowBlur = 8 * sc;
-            // Left & right ribbon loops
-            for (const dir of [-1, 1]) {
-              ctx.beginPath();
-              ctx.moveTo(0, 0);
-              ctx.bezierCurveTo(dir * 12 * sc, -13 * sc, dir * 16 * sc, -2 * sc, 0, 1.5 * sc);
-              ctx.stroke();
-              // Soft tail
-              ctx.beginPath();
-              ctx.moveTo(0, 1 * sc);
-              ctx.quadraticCurveTo(dir * 6 * sc, 4 * sc, dir * 9 * sc, 7.5 * sc);
-              ctx.stroke();
-            }
-            ctx.fillStyle = '#fff9ea';
-            ctx.beginPath();
-            ctx.arc(0, 0, Math.max(2.0, 2.8 * sc), 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-          }
-        }
-      }
-
       function renderStep(dt) {
         state.time += dt;
         if (state.pinchCooldown > 0) state.pinchCooldown -= dt;
@@ -2523,12 +2372,10 @@
         bindBufferAttribs(staticVbo);
         gl.drawArrays(gl.POINTS, 0, particleCount);
 
-        // 3. 3D Shaded Gift Boxes, Translucent Starlight Keepsakes & Click Bursts
+        // 3. Keepsake Ornaments, Uploaded Polaroids & Click Bursts Overlay
         ovCtx.clearRect(0, 0, w, h);
         const sinY = Math.sin(state.rotY), cosY = Math.cos(state.rotY);
         const sinX = Math.sin(state.rotX), cosX = Math.cos(state.rotX);
-
-        renderLitGiftBoxes(ovCtx, sinY, cosY, sinX, cosX, fov, camDist, cx, cy);
 
         if (photoFrames.length > 0 && state.introProgress > 0.7) {
           const swirl = state.scatter * 2.2;
@@ -2553,76 +2400,98 @@
 
           projectedFrames.sort((a, b) => b.p.depth - a.p.depth);
           const theme = THEMES[currentThemeKey];
-          ovCtx.globalCompositeOperation = 'source-over';
           for (let i = 0; i < projectedFrames.length; i++) {
             const { pf, p } = projectedFrames[i];
             pf.depth = p.depth;
-            const rotSq = Math.max(0.58, Math.min(1.0, (camDist + 140 - p.depth) / 240));
-            const baseCard = (25 + state.scatter * 13) * p.scale;
-            const cardW = baseCard * (0.72 + 0.28 * rotSq);
-            const cardH = baseCard * 1.24;
-            const pad = cardW * 0.09;
-            const depthFade = p.depth > camDist + 25 ? 0.24 : (p.depth > camDist - 12 ? 0.56 : 0.88);
-            pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
+            const depthFade = p.depth > camDist + 20 ? 0.25 : (p.depth > camDist - 12 ? 0.62 : 0.94);
 
-            ovCtx.save();
-            ovCtx.translate(p.sx, p.sy);
-            ovCtx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.045);
-            ovCtx.globalAlpha = depthFade * fade;
+            if (pf.isPreset) {
+              // Delicate glowing starlight keepsake jewel ornament (never blocks the particle tree silhouette!)
+              const jewelR = (6.8 + state.scatter * 3.0) * p.scale;
+              const hitR = Math.max(15, jewelR * 2.2);
+              pf.screenRect = { x: p.sx - hitR, y: p.sy - hitR, w: hitR * 2, h: hitR * 2 };
 
-            // Delicate golden hanging thread & glowing branch pin
-            if (state.scatter < 0.4) {
-              const cordAlpha = (1 - state.scatter / 0.4) * depthFade * fade;
               ovCtx.save();
-              ovCtx.globalAlpha = cordAlpha * 0.78;
-              ovCtx.strokeStyle = theme.accent;
-              ovCtx.lineWidth = Math.max(0.85, 1.05 * p.scale);
+              ovCtx.translate(p.sx, p.sy);
+              ovCtx.globalAlpha = depthFade * fade;
+
+              // Hanging golden thread
+              if (state.scatter < 0.4) {
+                ovCtx.save();
+                ovCtx.globalAlpha = (1 - state.scatter / 0.4) * depthFade * fade * 0.72;
+                ovCtx.strokeStyle = theme.accent;
+                ovCtx.lineWidth = Math.max(0.75, 0.95 * p.scale);
+                ovCtx.beginPath();
+                ovCtx.moveTo(0, -jewelR * 1.1);
+                ovCtx.lineTo(0, -jewelR * 1.1 - 7 * p.scale);
+                ovCtx.stroke();
+                ovCtx.restore();
+              }
+
+              // Soft glowing orb halo
+              ovCtx.globalCompositeOperation = 'lighter';
+              const g = ovCtx.createRadialGradient(0, 0, 1, 0, 0, jewelR * 2.3);
+              g.addColorStop(0, '#ffffff');
+              g.addColorStop(0.28, hexToRgba(theme.accent, 0.72));
+              g.addColorStop(1, 'rgba(0,0,0,0)');
+              ovCtx.fillStyle = g;
               ovCtx.beginPath();
-              ovCtx.moveTo(0, -cardH * 0.5);
-              ovCtx.lineTo(0, -cardH * 0.5 - 10 * p.scale);
-              ovCtx.stroke();
-              ovCtx.fillStyle = '#fff9eb';
-              ovCtx.beginPath();
-              ovCtx.arc(0, -cardH * 0.5 - 10 * p.scale, Math.max(1.5, 2.0 * p.scale), 0, Math.PI * 2);
+              ovCtx.arc(0, 0, jewelR * 2.3, 0, Math.PI * 2);
               ovCtx.fill();
+
+              // Tiny diamond crystal frame with micro glint
+              ovCtx.globalCompositeOperation = 'source-over';
+              ovCtx.strokeStyle = '#fff5db';
+              ovCtx.lineWidth = Math.max(0.8, 1.0 * p.scale);
+              ovCtx.beginPath();
+              ovCtx.moveTo(0, -jewelR);
+              ovCtx.lineTo(jewelR * 0.78, 0);
+              ovCtx.lineTo(0, jewelR);
+              ovCtx.lineTo(-jewelR * 0.78, 0);
+              ovCtx.closePath();
+              ovCtx.fillStyle = hexToRgba(theme.accent, 0.28);
+              ovCtx.fill();
+              ovCtx.stroke();
+              ovCtx.restore();
+            } else {
+              // User-uploaded real photos: delicate rounded warm-ivory Polaroids with 3D foreshortening
+              const rotSq = Math.max(0.58, Math.min(1.0, (camDist + 140 - p.depth) / 240));
+              const baseCard = (24 + state.scatter * 12) * p.scale;
+              const cardW = baseCard * (0.74 + 0.26 * rotSq);
+              const cardH = baseCard * 1.22;
+              const pad = cardW * 0.085;
+              pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
+
+              ovCtx.save();
+              ovCtx.globalCompositeOperation = 'source-over';
+              ovCtx.translate(p.sx, p.sy);
+              ovCtx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.045);
+              ovCtx.globalAlpha = depthFade * fade;
+
+              if (state.scatter < 0.4) {
+                ovCtx.save();
+                ovCtx.globalAlpha = (1 - state.scatter / 0.4) * depthFade * fade * 0.8;
+                ovCtx.strokeStyle = theme.accent;
+                ovCtx.lineWidth = Math.max(0.8, 1.0 * p.scale);
+                ovCtx.beginPath();
+                ovCtx.moveTo(0, -cardH * 0.5);
+                ovCtx.lineTo(0, -cardH * 0.5 - 8 * p.scale);
+                ovCtx.stroke();
+                ovCtx.restore();
+              }
+
+              ovCtx.shadowColor = hexToRgba(theme.accent, 0.50);
+              ovCtx.shadowBlur = 10 * p.scale;
+              roundRectPath(ovCtx, -cardW * 0.5, -cardH * 0.5, cardW, cardH, 2.5 * p.scale);
+              ovCtx.fillStyle = '#faf5ea';
+              ovCtx.fill();
+              ovCtx.shadowBlur = 0;
+
+              const imgW = cardW - pad * 2;
+              const imgH = cardH - pad * 3.2;
+              ovCtx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
               ovCtx.restore();
             }
-
-            // Translucent smoked starlight glass card (blends naturally into tree instead of white paper sticker!)
-            ovCtx.shadowColor = hexToRgba(theme.accent, 0.42);
-            ovCtx.shadowBlur = 12 * p.scale;
-            roundRectPath(ovCtx, -cardW * 0.5, -cardH * 0.5, cardW, cardH, 3.2 * p.scale);
-            ovCtx.fillStyle = 'rgba(14, 16, 30, 0.76)';
-            ovCtx.fill();
-            ovCtx.shadowBlur = 0;
-
-            ovCtx.strokeStyle = hexToRgba(theme.accent, 0.72);
-            ovCtx.lineWidth = Math.max(0.9, 1.15 * p.scale);
-            ovCtx.stroke();
-
-            // Rounded inset photo thumbnail
-            const imgW = cardW - pad * 2;
-            const imgH = cardH - pad * 3.1;
-            const imgX = -imgW * 0.5, imgY = -cardH * 0.5 + pad;
-            ovCtx.save();
-            roundRectPath(ovCtx, imgX, imgY, imgW, imgH, 1.8 * p.scale);
-            ovCtx.clip();
-            ovCtx.drawImage(pf.img, imgX, imgY, imgW, imgH);
-
-            // Subtle glass sheen across upper-left corner
-            const sheen = ovCtx.createLinearGradient(imgX, imgY, imgX + imgW, imgY + imgH);
-            sheen.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
-            sheen.addColorStop(0.45, 'rgba(255, 255, 255, 0)');
-            ovCtx.fillStyle = sheen;
-            ovCtx.fillRect(imgX, imgY, imgW, imgH);
-            ovCtx.restore();
-
-            // Tiny luminous keepsake dot on bottom glass margin
-            ovCtx.fillStyle = hexToRgba(theme.accent, 0.85);
-            ovCtx.beginPath();
-            ovCtx.arc(0, cardH * 0.5 - pad * 1.0, Math.max(0.85, 1.2 * p.scale), 0, Math.PI * 2);
-            ovCtx.fill();
-            ovCtx.restore();
           }
         } else {
           for (let i = 0; i < photoFrames.length; i++) photoFrames[i].screenRect = null;
