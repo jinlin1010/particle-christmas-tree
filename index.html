@@ -892,6 +892,14 @@
         return `rgba(${(num >> 16) & 255},${(num >> 8) & 255},${num & 255},${alpha})`;
       }
 
+      function shadeHex(hex, mul) {
+        const [r, g, b] = hexToRgb01(hex);
+        const rr = Math.min(245, Math.max(18, Math.round(r * 255 * mul)));
+        const gg = Math.min(245, Math.max(18, Math.round(g * 255 * mul)));
+        const bb = Math.min(245, Math.max(18, Math.round(b * 255 * mul)));
+        return `rgb(${rr},${gg},${bb})`;
+      }
+
       function rand(min, max) { return min + Math.random() * (max - min); }
       function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -960,7 +968,7 @@
           float effScatter = max(uScatter, 1.0 - arrive);
 
           if (pType < 0.5) {
-            vec3 startPos = aScatterPos;
+            vec3 startPos = aScatterPos * (1.0 + uScatter * 0.52);
             if (uIntro < 1.35) {
               float introFrac = 1.0 - arrive;
               float helixAng = introFrac * 4.2 + aTreePos.y * 0.015;
@@ -970,7 +978,7 @@
             }
             pos = mix(aTreePos, startPos, effScatter);
             if (effScatter > 0.002 && uScatter > 0.01) {
-              float sw = uScatter * 2.35 * (1.0 - length(aTreePos.xz) * 0.0012);
+              float sw = uScatter * 2.85 * (1.0 - length(aTreePos.xz) * 0.0011);
               float cs = cos(sw), sn = sin(sw);
               pos.xz = vec2(pos.x * cs - pos.z * sn, pos.x * sn + pos.z * cs);
             }
@@ -979,11 +987,11 @@
             float cs = cos(ang), sn = sin(ang);
             vec3 ringPos = aTreePos;
             ringPos.xz = vec2(ringPos.x * cs - ringPos.z * sn, ringPos.x * sn + ringPos.z * cs);
-            ringPos.xz *= (1.0 + effScatter * 0.55);
+            ringPos.xz *= (1.0 + effScatter * 0.85);
             ringPos.y += sin(uTime * 1.8 + aParams.z) * 2.2;
-            pos = mix(ringPos, aScatterPos, (1.0 - arrive) * 0.82);
+            pos = mix(ringPos, aScatterPos * 1.2, (1.0 - arrive) * 0.82);
           } else if (pType < 2.5) {
-            vec3 topStart = aScatterPos;
+            vec3 topStart = aScatterPos * (1.0 + uScatter * 0.4);
             topStart.y -= (1.0 - arrive) * 140.0;
             pos = mix(aTreePos, topStart, effScatter);
           } else if (pType < 3.5) {
@@ -1457,7 +1465,7 @@
         'willow',
         'peony',
         'chrysanthemum',
-        'ghost',
+        'palm',
         'horsetail',
         'crackle',
         'strobe',
@@ -1614,146 +1622,146 @@
 
       function detonateShell(shell) {
         const { x, y, palette, shellType, layer, depthScale } = shell;
-        const baseScale = (Math.min(state.width, state.height) / 690) * depthScale;
+        const baseScale = (Math.min(state.width, state.height) / 640) * depthScale;
         const isMob = state.width < state.height;
-        const alphaMul = layer === 'front' ? 0.95 : (isMob ? 0.88 : (0.78 + 0.18 * Math.min(1, depthScale)));
+        const alphaMul = layer === 'front' ? 1.0 : (isMob ? 0.96 : (0.86 + 0.14 * Math.min(1, depthScale)));
 
-        fwFlashes.push({ x, y, life: 1.0, radius: 145 * baseScale, color: palette.glow, layer, alphaMul });
-        fwActiveBursts.push({ x, y, life: 2.4 });
+        fwFlashes.push({ x, y, life: 1.0, radius: 165 * baseScale, color: palette.glow, layer, alphaMul });
+        fwActiveBursts.push({ x, y, life: 2.2 });
 
         if (shellType === 'willow') {
-          // 1. Firework Simulator Golden Willow (dense weeping glitter-shedding curtains!)
-          for (let i = 0; i < 82; i++) {
+          // 1. Lush Golden Willow with dense weeping glitter trails
+          for (let i = 0; i < 110; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(145, 290) * baseScale * Math.pow(Math.random(), 0.25);
+            const speed = rand(150, 295) * baseScale * Math.pow(Math.random(), 0.25);
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
               vy: Math.cos(phi) * speed * 0.78 - 28 * baseScale,
-              drag: 0.974,
-              gravity: 78 * baseScale,
-              decay: rand(0.35, 0.48),
-              width: rand(1.4, 2.0),
-              maxTrail: 18,
-              color: '#ffdf94',
+              drag: 0.975,
+              gravity: 74 * baseScale,
+              decay: rand(0.32, 0.45),
+              width: rand(1.75, 2.45),
+              maxTrail: 20,
+              color: '#ffe39a',
               secondColor: palette.secondary,
               transitionAt: 0.42,
-              glitterRate: 26,
-              glitterColor: '#ffe39a',
-              glitterSpeed: 20 * baseScale,
+              glitterRate: 30,
+              glitterColor: '#ffe8ad',
+              glitterSpeed: 22 * baseScale,
               layer, alphaMul
             });
           }
         } else if (shellType === 'peony') {
-          // 2. Dual-Color Pistil Peony with mid-flight color shift
-          for (let i = 0; i < 105; i++) {
+          // 2. Lush Dual-Color Pistil Peony
+          for (let i = 0; i < 125; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(165, 270) * baseScale * (0.82 + 0.22 * Math.random());
+            const speed = rand(165, 275) * baseScale * (0.82 + 0.22 * Math.random());
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
               vy: Math.cos(phi) * speed * 0.88 - 14 * baseScale,
               drag: 0.968,
-              gravity: 56 * baseScale,
-              decay: rand(0.45, 0.60),
-              width: rand(1.5, 2.15),
-              maxTrail: 13,
+              gravity: 54 * baseScale,
+              decay: rand(0.40, 0.56),
+              width: rand(1.85, 2.55),
+              maxTrail: 15,
               color: palette.primary,
               secondColor: palette.secondary,
               transitionAt: 0.38,
-              glitterRate: i % 4 === 0 ? 12 : 0,
+              glitterRate: i % 3 === 0 ? 16 : 0,
               glitterColor: '#fff6dc',
               layer, alphaMul
             });
           }
-          for (let i = 0; i < 42; i++) {
+          for (let i = 0; i < 48; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(65, 118) * baseScale;
+            const speed = rand(65, 120) * baseScale;
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
               vy: Math.cos(phi) * speed * 0.88 - 10 * baseScale,
               drag: 0.966,
               gravity: 48 * baseScale,
-              decay: rand(0.54, 0.70),
-              width: 1.45,
-              maxTrail: 9,
+              decay: rand(0.48, 0.65),
+              width: 1.7,
+              maxTrail: 10,
               color: '#fff6dc',
               twinkle: true,
               layer, alphaMul
             });
           }
         } else if (shellType === 'chrysanthemum') {
-          // 3. Long-Trailing Chrysanthemum with crisp white-hot heads & glitter streamers
-          for (let i = 0; i < 90; i++) {
+          // 3. Bright Long-Trailing Chrysanthemum
+          for (let i = 0; i < 110; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(190, 250) * baseScale;
+            const speed = rand(190, 255) * baseScale;
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
               vy: Math.cos(phi) * speed * 0.90 - 12 * baseScale,
               drag: 0.974,
-              gravity: 54 * baseScale,
-              decay: rand(0.42, 0.56),
-              width: 1.8,
-              maxTrail: 17,
+              gravity: 52 * baseScale,
+              decay: rand(0.38, 0.52),
+              width: 2.15,
+              maxTrail: 19,
               color: palette.primary,
-              glitterRate: i % 3 === 0 ? 18 : 0,
+              glitterRate: i % 2 === 0 ? 20 : 0,
               glitterColor: palette.secondary,
               layer, alphaMul
             });
           }
-        } else if (shellType === 'ghost') {
-          // 4. Firework Simulator Ghost Shell (stealthy invisible arc -> suddenly ignites in mid-air!)
-          for (let i = 0; i < 86; i++) {
+        } else if (shellType === 'palm') {
+          // 4. Bold Golden Palm Comets (thick arching arms with heavy spark plumes)
+          for (let i = 0; i < 42; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(185, 250) * baseScale;
+            const speed = rand(160, 245) * baseScale;
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
-              vy: Math.cos(phi) * speed * 0.88 - 12 * baseScale,
+              vy: Math.cos(phi) * speed * 0.85 - 20 * baseScale,
               drag: 0.972,
-              gravity: 54 * baseScale,
+              gravity: 66 * baseScale,
               decay: rand(0.38, 0.50),
-              width: 1.9,
-              maxTrail: 14,
-              color: palette.primary,
-              secondColor: palette.secondary,
-              transitionAt: 0.52,
-              ghost: true,
+              width: 2.6,
+              maxTrail: 18,
+              color: i % 3 === 0 ? palette.secondary : '#ffe6a3',
+              glitterRate: 36,
+              glitterColor: '#ffdf94',
+              glitterSpeed: 28 * baseScale,
               layer, alphaMul
             });
           }
         } else if (shellType === 'horsetail') {
-          // 5. Heavy Plumage Horse Tail Shell (thick golden-spark shedding cascade)
-          for (let i = 0; i < 66; i++) {
+          // 5. Heavy Plumage Horse Tail Shell
+          for (let i = 0; i < 82; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(95, 195) * baseScale;
+            const speed = rand(105, 205) * baseScale;
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
               vy: Math.cos(phi) * speed * 0.72 - 38 * baseScale,
-              drag: 0.966,
-              gravity: 96 * baseScale,
-              decay: rand(0.36, 0.48),
-              width: 1.75,
-              maxTrail: 16,
+              drag: 0.968,
+              gravity: 92 * baseScale,
+              decay: rand(0.34, 0.46),
+              width: 2.0,
+              maxTrail: 17,
               color: palette.primary,
-              glitterRate: 30,
+              glitterRate: 32,
               glitterColor: '#ffe8ab',
               glitterSpeed: 28 * baseScale,
               layer, alphaMul
             });
           }
         } else if (shellType === 'crackle') {
-          // 6. Crackle Shell (rapid gold/color streaks popping into 100s of micro-crackles at end of life)
-          for (let i = 0; i < 52; i++) {
+          // 6. Crackle Shell
+          for (let i = 0; i < 66; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
             const speed = rand(175, 285) * baseScale;
@@ -1762,10 +1770,10 @@
               vx: Math.sin(phi) * Math.cos(theta) * speed,
               vy: Math.cos(phi) * speed * 0.86 - 14 * baseScale,
               drag: 0.968,
-              gravity: 64 * baseScale,
-              decay: rand(0.54, 0.72),
-              width: 1.8,
-              maxTrail: 12,
+              gravity: 60 * baseScale,
+              decay: rand(0.50, 0.68),
+              width: 2.1,
+              maxTrail: 14,
               color: i % 3 === 0 ? palette.secondary : '#ffdf94',
               crackleOnDeath: true,
               baseScale, palette,
@@ -1774,29 +1782,29 @@
           }
         } else if (shellType === 'strobe') {
           // 7. Rhythmic Blinking Strobe Chrysanthemum
-          for (let i = 0; i < 88; i++) {
+          for (let i = 0; i < 102; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const speed = rand(165, 255) * baseScale;
+            const speed = rand(170, 260) * baseScale;
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * speed,
               vy: Math.cos(phi) * speed * 0.88 - 14 * baseScale,
               drag: 0.970,
               gravity: 52 * baseScale,
-              decay: rand(0.40, 0.54),
-              width: 1.85,
-              maxTrail: 11,
+              decay: rand(0.38, 0.52),
+              width: 2.1,
+              maxTrail: 13,
               color: i % 3 === 0 ? '#ffffff' : palette.primary,
               strobe: true,
-              glitterRate: 10,
+              glitterRate: 14,
               glitterColor: '#ffffff',
               layer, alphaMul
             });
           }
         } else if (shellType === 'crossette') {
           // 8. 4-Way Crossette Splitting Comets
-          for (let i = 0; i < 30; i++) {
+          for (let i = 0; i < 36; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
             const sp = rand(155, 250) * baseScale;
@@ -1805,10 +1813,10 @@
               vx: Math.sin(phi) * Math.cos(theta) * sp,
               vy: Math.cos(phi) * sp * 0.85 - 16 * baseScale,
               drag: 0.972,
-              gravity: 64 * baseScale,
-              decay: rand(0.50, 0.64),
-              width: 2.05,
-              maxTrail: 12,
+              gravity: 62 * baseScale,
+              decay: rand(0.48, 0.62),
+              width: 2.3,
+              maxTrail: 14,
               color: i % 2 === 0 ? palette.primary : palette.secondary,
               canSplit: true,
               baseScale, palette,
@@ -1817,11 +1825,11 @@
           }
         } else if (shellType === 'heartShell') {
           // 9. Sparkling Sky Heart with glitter trail
-          const hScale = 9.4 * baseScale;
+          const hScale = 9.8 * baseScale;
           const rot = rand(-0.18, 0.18);
           const cs = Math.cos(rot), sn = Math.sin(rot);
-          for (let i = 0; i < 72; i++) {
-            const t = (i / 72) * Math.PI * 2;
+          for (let i = 0; i < 78; i++) {
+            const t = (i / 78) * Math.PI * 2;
             const hx = 16 * Math.pow(Math.sin(t), 3) * hScale;
             const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * hScale;
             addFwSpark({
@@ -1830,33 +1838,33 @@
               vy: (hx * sn + hy * cs) - 8 * baseScale + rand(-8, 8),
               drag: 0.966,
               gravity: 34 * baseScale,
-              decay: rand(0.45, 0.58),
-              width: 1.9,
-              maxTrail: 11,
+              decay: rand(0.42, 0.56),
+              width: 2.15,
+              maxTrail: 12,
               color: i % 3 === 0 ? palette.secondary : palette.primary,
-              glitterRate: i % 3 === 0 ? 12 : 0,
+              glitterRate: i % 2 === 0 ? 14 : 0,
               glitterColor: '#fff0d6',
               twinkle: true,
               layer, alphaMul
             });
           }
         } else {
-          // 10. Falling Leaves (slow-drifting shimmering ember clusters)
-          for (let i = 0; i < 38; i++) {
+          // 10. Falling Leaves
+          for (let i = 0; i < 48; i++) {
             const u = Math.random(), v = Math.random();
             const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-            const sp = rand(110, 225) * baseScale;
+            const sp = rand(120, 235) * baseScale;
             addFwSpark({
               x, y,
               vx: Math.sin(phi) * Math.cos(theta) * sp,
               vy: Math.cos(phi) * sp * 0.82 - 18 * baseScale,
-              drag: 0.946,
-              gravity: 42 * baseScale,
-              decay: rand(0.34, 0.46),
-              width: 1.6,
-              maxTrail: 8,
+              drag: 0.948,
+              gravity: 40 * baseScale,
+              decay: rand(0.32, 0.44),
+              width: 1.9,
+              maxTrail: 10,
               color: palette.primary,
-              glitterRate: 28,
+              glitterRate: 30,
               glitterColor: '#ffdf94',
               glitterSpeed: 32 * baseScale,
               layer, alphaMul
@@ -1883,7 +1891,7 @@
           fwTimer -= dt;
           if (fwTimer <= 0) {
             launchFirework();
-            fwTimer = rand(1.9, 2.9);
+            fwTimer = rand(1.0, 1.55);
           }
         }
 
@@ -2277,17 +2285,16 @@
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
           const r = hNorm * TREE_RADIUS * 1.15 + 24;
           const angle = idx * 2.39996 + 0.4;
-          // Desktop wide orbital ring + Mobile portrait vertical helix so cards never overlap on 9:16 screens!
-          const gAng = (idx / Math.max(1, total)) * Math.PI * 2;
-          const gRad = 265 + (idx % 2) * 42;
-          const sx = Math.cos(gAng) * gRad;
-          const sy = Math.sin(idx * 2.05) * 90 - 25;
-          const sz = Math.sin(gAng) * gRad;
-          const mAng = idx * 2.15 + 0.4;
-          const mRad = 128 + (idx % 2) * 24;
-          const msx = Math.cos(mAng) * mRad;
-          const msy = -175 + (idx / Math.max(1, total - 1)) * 315;
-          const msz = Math.sin(mAng) * mRad;
+          // Foreground Surge positions in Chaos/Scatter mode (wide organic constellation, zero grid look!)
+          const spreadCols = [-420, -210, 15, 225, 425, -320, -110, 130, 340];
+          const spreadRows = [-85, 115, -105, 125, -60, 195, 25, -15, 185];
+          const sx = idx < spreadCols.length ? spreadCols[idx] : Math.cos((idx / total) * Math.PI * 2) * 340;
+          const sy = idx < spreadRows.length ? spreadRows[idx] : Math.sin(idx * 2.1) * 120 + 30;
+          const sz = -145 + (idx % 3) * 42;
+          // Mobile portrait: organic floating vertical spiral across the full night sky
+          const msx = Math.sin(idx * 1.55 + 0.6) * 112;
+          const msy = -265 + (idx / Math.max(1, total - 1)) * 455;
+          const msz = -115 + (idx % 3) * 32;
           photoFrames.push({
             img,
             url: item.url,
@@ -2656,76 +2663,65 @@
             const isHovered = hoverPhoto === pf;
 
             if (sFrac < 0.24) {
-              // TREE MODE: Pure Christmas Tree with delicate glowing golden Christmas Bell ornaments!
-              const bellVis = isHovered ? 1.0 : (p.depth > camDist + 14 ? 0.0 : (p.depth > camDist - 12 ? 0.52 : 0.95));
-              if (bellVis <= 0.02) { pf.screenRect = null; continue; }
+              // TREE MODE: Luxury glossy 3D metallic Christmas Bauble Ornaments (zero ugly cartoon stickers!)
+              const orbVis = isHovered ? 1.0 : (p.depth > camDist + 14 ? 0.0 : (p.depth > camDist - 12 ? 0.56 : 0.96));
+              if (orbVis <= 0.02) { pf.screenRect = null; continue; }
 
-              const bSc = p.scale * (isHovered ? 1.28 : 1.0) * (0.45 + 0.55 * bellFade);
-              const bw = 11.5 * bSc;
-              const bh = 13.5 * bSc;
-              const hitR = Math.max(15, 16 * bSc);
+              const rOrb = 6.8 * p.scale * (isHovered ? 1.32 : 1.0) * (0.45 + 0.55 * bellFade);
+              const hitR = Math.max(14, rOrb * 2.1);
               pf.screenRect = { x: p.sx - hitR, y: p.sy - hitR, w: hitR * 2, h: hitR * 2 };
 
+              const orbCol = theme.giftColors[idx % theme.giftColors.length];
               ovCtx.save();
               ovCtx.translate(p.sx, p.sy);
-              ovCtx.rotate(Math.sin(state.time * 2.2 + idx * 1.3) * 0.14);
-              ovCtx.globalAlpha = bellVis * bellFade * fade;
+              ovCtx.globalAlpha = orbVis * bellFade * fade;
 
-              // Fine golden hanging cord + branch clasp jewel
+              // Fine golden hanging string
               ovCtx.strokeStyle = theme.accent;
-              ovCtx.lineWidth = Math.max(0.8, 1.0 * p.scale);
+              ovCtx.lineWidth = Math.max(0.75, 0.95 * p.scale);
               ovCtx.beginPath();
-              ovCtx.moveTo(0, -bh * 0.55);
-              ovCtx.lineTo(0, -bh * 0.55 - 8 * p.scale);
+              ovCtx.moveTo(0, -rOrb);
+              ovCtx.lineTo(0, -rOrb - 7 * p.scale);
               ovCtx.stroke();
 
-              // Soft warm ornament aura
+              // Soft ambient glow halo
               ovCtx.globalCompositeOperation = 'lighter';
-              const bg = ovCtx.createRadialGradient(0, 0, 1, 0, 0, bw * 1.9);
-              bg.addColorStop(0, hexToRgba('#fff5d8', isHovered ? 0.72 : 0.42));
-              bg.addColorStop(0.45, hexToRgba(theme.accent, 0.24));
-              bg.addColorStop(1, 'rgba(0,0,0,0)');
-              ovCtx.fillStyle = bg;
-              ovCtx.beginPath(); ovCtx.arc(0, 0, bw * 1.9, 0, Math.PI * 2); ovCtx.fill();
+              const halo = ovCtx.createRadialGradient(0, 0, rOrb * 0.2, 0, 0, rOrb * 2.3);
+              halo.addColorStop(0, hexToRgba(orbCol, isHovered ? 0.72 : 0.42));
+              halo.addColorStop(1, 'rgba(0,0,0,0)');
+              ovCtx.fillStyle = halo;
+              ovCtx.beginPath(); ovCtx.arc(0, 0, rOrb * 2.3, 0, Math.PI * 2); ovCtx.fill();
 
-              // Sculpted 3D-shaded Christmas Bell silhouette
+              // Glossy 3D metallic sphere shading (highlight at upper-left + rich saturated body + dark lower-right rim)
               ovCtx.globalCompositeOperation = 'source-over';
-              const bellGrad = ovCtx.createLinearGradient(-bw * 0.6, -bh * 0.5, bw * 0.6, bh * 0.5);
-              bellGrad.addColorStop(0, '#fff7dc');
-              bellGrad.addColorStop(0.45, theme.accent);
-              bellGrad.addColorStop(1, '#a87434');
-              ovCtx.fillStyle = bellGrad;
-              ovCtx.beginPath();
-              ovCtx.moveTo(0, -bh * 0.52);
-              ovCtx.bezierCurveTo(bw * 0.42, -bh * 0.48, bw * 0.48, bh * 0.05, bw * 0.68, bh * 0.36);
-              ovCtx.quadraticCurveTo(0, bh * 0.52, -bw * 0.68, bh * 0.36);
-              ovCtx.bezierCurveTo(-bw * 0.48, bh * 0.05, -bw * 0.42, -bh * 0.48, 0, -bh * 0.52);
-              ovCtx.closePath();
-              ovCtx.fill();
-              ovCtx.strokeStyle = 'rgba(255, 250, 230, 0.8)';
-              ovCtx.lineWidth = Math.max(0.7, 0.9 * p.scale);
-              ovCtx.stroke();
+              const sph = ovCtx.createRadialGradient(-rOrb * 0.34, -rOrb * 0.36, rOrb * 0.08, 0, 0, rOrb);
+              sph.addColorStop(0, '#ffffff');
+              sph.addColorStop(0.28, orbCol);
+              sph.addColorStop(0.82, shadeHex(orbCol, 0.55));
+              sph.addColorStop(1, shadeHex(orbCol, 0.32));
+              ovCtx.fillStyle = sph;
+              ovCtx.beginPath(); ovCtx.arc(0, 0, rOrb, 0, Math.PI * 2); ovCtx.fill();
 
-              // Glowing bell clapper bead + top bow pin
-              ovCtx.fillStyle = '#fff9e6';
-              ovCtx.beginPath(); ovCtx.arc(0, bh * 0.48, Math.max(1.6, 2.2 * bSc), 0, Math.PI * 2); ovCtx.fill();
-              ovCtx.beginPath(); ovCtx.arc(0, -bh * 0.56, Math.max(1.3, 1.8 * bSc), 0, Math.PI * 2); ovCtx.fill();
+              // Delicate metallic gold crown cap on top of bauble
+              ovCtx.fillStyle = '#f3d384';
+              ovCtx.fillRect(-rOrb * 0.28, -rOrb * 1.15, rOrb * 0.56, rOrb * 0.24);
               ovCtx.restore();
             }
 
             if (popSpring > 0.02) {
-              // SCATTER MODE: Polaroid Photo Frames POP OUT elastically into the 3D Nebula Gallery!
+              // SCATTER MODE: Hero Polaroid Photo Frames POP OUT & SURGE FORWARD into foreground!
               const natW = pf.img.naturalWidth || 1;
               const natH = pf.img.naturalHeight || 1;
               const imgRatio = Math.max(0.68, Math.min(1.45, natW / natH));
-              const hoverBoost = isHovered ? 1.22 : 1.0;
-              const baseScale = (58 * popSpring) * p.scale * hoverBoost;
+              const hoverBoost = isHovered ? 1.20 : 1.0;
+              const scTarget = isPortrait ? 68 : 88;
+              const baseScale = (scTarget * popSpring) * p.scale * hoverBoost;
               const imgW = imgRatio >= 1 ? baseScale * 0.94 : baseScale * 0.94 * imgRatio;
               const imgH = imgRatio >= 1 ? (baseScale * 0.94) / imgRatio : baseScale * 0.94;
               const pad = Math.max(imgW, imgH) * 0.095;
               const cardW = imgW + pad * 2;
               const cardH = imgH + pad * 3.4;
-              const depthFade = isHovered ? 1.0 : (p.depth > camDist + 70 ? 0.56 : 0.98);
+              const depthFade = isHovered ? 1.0 : (p.depth > camDist + 30 ? 0.62 : 0.99);
               pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
 
               ovCtx.save();
@@ -2735,14 +2731,14 @@
               ovCtx.rotate(isHovered ? sway * 0.3 : sway);
               ovCtx.globalAlpha = depthFade * fade * Math.min(1, popRaw * 1.6);
 
-              ovCtx.shadowColor = hexToRgba(theme.accent, isHovered ? 0.90 : 0.58);
-              ovCtx.shadowBlur = (isHovered ? 24 : 14) * p.scale;
+              ovCtx.shadowColor = hexToRgba(theme.accent, isHovered ? 0.92 : 0.64);
+              ovCtx.shadowBlur = (isHovered ? 26 : 16) * p.scale;
               ovCtx.fillStyle = '#fdf9f0';
               ovCtx.fillRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
               ovCtx.shadowBlur = 0;
 
-              ovCtx.strokeStyle = hexToRgba(theme.accent, isHovered ? 0.9 : 0.42);
-              ovCtx.lineWidth = isHovered ? 1.5 : 0.9;
+              ovCtx.strokeStyle = hexToRgba(theme.accent, isHovered ? 0.95 : 0.48);
+              ovCtx.lineWidth = isHovered ? 1.6 : 1.0;
               ovCtx.strokeRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
 
               drawImageCover(ovCtx, pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
