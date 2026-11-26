@@ -2151,12 +2151,20 @@
         if (announce) showToast('Loaded 6 starlight Polaroid keepsakes');
       }
 
+      function formatPhotoCaption(filename, idx) {
+        const raw = (filename || '').replace(/\.[^.]+$/, '').trim();
+        if (!raw || /^(微信图片|mmexport|IMG|DSC|DCIM|PXL|Screenshot|Photo|image|[\d_-]+)[_\s-]*/i.test(raw)) {
+          return `Memory #${idx + 1} ♥`;
+        }
+        return raw;
+      }
+
       function layoutPhotoFrames(files) {
         const list = Array.from(files).slice(0, 18);
         if (!list.length) return;
         const items = list.map((file, i) => ({
           url: URL.createObjectURL(file),
-          caption: file.name ? file.name.replace(/\.[^.]+$/, '') : `Memory #${i + 1}`
+          caption: formatPhotoCaption(file.name, i)
         }));
         setPolaroidItems(items);
         showToast(`Hung ${list.length} Polaroid photos on the tree! Tap any photo to zoom.`, 3400);
