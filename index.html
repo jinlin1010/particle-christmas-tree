@@ -423,42 +423,66 @@
 
     .polaroid-focus {
       position: relative;
-      background: #fdfbf7;
-      padding: 14px 14px 28px;
-      border-radius: 6px;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.72), 0 0 38px rgba(255, 214, 138, 0.28);
+      background: linear-gradient(165deg, #fffdf9 0%, #f7f1e6 100%);
+      padding: 15px 15px 24px;
+      border-radius: 7px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.78), 0 0 42px rgba(255, 214, 138, 0.24);
       width: 100%;
       transform: scale(0.9) rotate(-1deg);
       transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
       text-align: center;
     }
 
-    .photo-modal.show .polaroid-focus { transform: scale(1) rotate(-0.6deg); }
+    .photo-modal.show .polaroid-focus { transform: scale(1) rotate(-0.5deg); }
 
     .polaroid-focus img {
       display: block;
       width: 100%;
       aspect-ratio: 1 / 1;
-      max-height: 54vh;
+      max-height: 52vh;
       object-fit: cover;
-      border-radius: 2px;
+      border-radius: 3px;
       background: #0d0f18;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
     }
 
     .polaroid-caption {
-      margin-top: 12px;
-      color: #4a3b2c;
+      margin-top: 13px;
+      color: #3f3224;
       font-family: "Georgia", serif;
       font-style: italic;
-      font-size: 14px;
+      font-size: 15px;
       letter-spacing: 0.05em;
     }
 
     .polaroid-meta {
-      margin-top: 4px;
-      color: #9a8874;
+      margin-top: 5px;
+      color: #8f7e6c;
       font-size: 11px;
       letter-spacing: 0.14em;
+    }
+
+    .modal-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.28);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: width 0.2s ease, background 0.2s ease;
+    }
+
+    .modal-dot.active {
+      width: 18px;
+      background: var(--accent);
     }
 
     .modal-nav {
@@ -683,7 +707,9 @@
         <div class="polaroid-caption" id="modalCaption">Winter Memories ♥</div>
         <div class="polaroid-meta" id="modalCounter">1 / 6</div>
       </div>
+      <div class="modal-dots" id="modalDots"></div>
       <div class="modal-actions">
+        <button class="modal-chip" id="modalPlayBtn">▶ Slideshow</button>
         <button class="modal-chip" id="modalUploadBtn">📷 Add Your Photos</button>
         <button class="modal-chip" id="modalCloseBtn">✕ Close</button>
       </div>
@@ -1293,80 +1319,112 @@
           pushPt(bx0, by, bz0, sx, sy, sz, '#fff8e8', 11.5, 0.85, b, 2.8, 0, 0, 1, 0.22 + (1.0 - hNorm) * 0.65);
         }
 
-        // 6c. 5 Sculpted 3D Luminous Gift Boxes around the Tree Base (anchors the tree into the Milky Way)
+        // 6c. 6 Sculpted 3D Luminous Gift Boxes around the Tree Base (dense filled faces, overhanging lid, satin bow)
         const giftSpecs = [
-          { ang: 0.35, rad: 156, w: 36, h: 30, d: 36, yaw: 0.42 },
-          { ang: 1.55, rad: 174, w: 32, h: 38, d: 32, yaw: -0.35 },
-          { ang: 2.82, rad: 162, w: 42, h: 26, d: 34, yaw: 0.78 },
-          { ang: 4.12, rad: 178, w: 34, h: 32, d: 34, yaw: -0.52 },
-          { ang: 5.26, rad: 152, w: 30, h: 26, d: 30, yaw: 0.28 }
+          { ang: 0.28, rad: 168, w: 38, h: 28, d: 36, yaw: 0.44 },
+          { ang: 1.16, rad: 184, w: 30, h: 36, d: 30, yaw: -0.32 },
+          { ang: 2.18, rad: 172, w: 42, h: 24, d: 34, yaw: 0.72 },
+          { ang: 3.16, rad: 186, w: 34, h: 32, d: 34, yaw: -0.48 },
+          { ang: 4.24, rad: 168, w: 32, h: 26, d: 30, yaw: 0.34 },
+          { ang: 5.28, rad: 178, w: 36, h: 30, d: 34, yaw: -0.62 }
         ];
         giftSpecs.forEach((g, gIdx) => {
           const cx0 = Math.cos(g.ang) * g.rad;
           const cz0 = Math.sin(g.ang) * g.rad;
-          const baseY = TREE_BASE_Y + 12;
+          const baseY = TREE_BASE_Y + 14;
           const cy0 = baseY - g.h * 0.5;
           const cs = Math.cos(g.yaw), sn = Math.sin(g.yaw);
           const boxCol = theme.giftColors[gIdx % theme.giftColors.length];
           const ribCol = theme.ribbonColors[1] || '#fff4d8';
-          const order = 0.20 + gIdx * 0.03;
+          const order = 0.20 + gIdx * 0.025;
 
           const pushBoxPt = (lx, ly, lz, col, sz, al, shape = 0) => {
             const wx = cx0 + lx * cs - lz * sn;
             const wz = cz0 + lx * sn + lz * cs;
             const wy = cy0 + ly;
             const [sx, sy, sz0] = randomSpherePoint(200, 520);
-            pushPt(wx, wy, wz, sx, sy + 90, sz0, col, sz, al, gIdx + lx * 0.1, 2.0, 0, 0, shape, order);
+            pushPt(wx, wy, wz, sx, sy + 90, sz0, col, sz, al, gIdx + lx * 0.1, 1.8, 0, 0, shape, order);
           };
 
           const hw = g.w * 0.5, hh = g.h * 0.5, hd = g.d * 0.5;
-          // Crisp edges (12 box edges)
-          const corners = [
-            [-hw,-hh,-hd],[hw,-hh,-hd],[hw,hh,-hd],[-hw,hh,-hd],
-            [-hw,-hh, hd],[hw,-hh, hd],[hw,hh, hd],[-hw,hh, hd]
-          ];
-          const edgeIdx = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-          edgeIdx.forEach(([a, b]) => {
-            const pA = corners[a], pB = corners[b];
-            for (let k = 0; k <= 10; k++) {
-              const t = k / 10;
-              pushBoxPt(pA[0]+(pB[0]-pA[0])*t, pA[1]+(pB[1]-pA[1])*t, pA[2]+(pB[2]-pA[2])*t, boxCol, 4.9, 0.84);
+          const lidH = 6.5, lidOver = 2.0;
+
+          // Structured dense face grid (so boxes read as solid glowing presents, never hollow wireframes)
+          const step = 4.2;
+          // Front & Back faces (+Z / -Z)
+          for (let x = -hw; x <= hw; x += step) {
+            for (let y = -hh + 1.5; y <= hh; y += step) {
+              pushBoxPt(x, y,  hd, boxCol, 4.6, 0.50);
+              pushBoxPt(x, y, -hd, boxCol, 4.6, 0.44);
+            }
+          }
+          // Left & Right faces (+X / -X)
+          for (let z = -hd + step * 0.5; z <= hd - step * 0.5; z += step) {
+            for (let y = -hh + 1.5; y <= hh; y += step) {
+              pushBoxPt( hw, y, z, boxCol, 4.6, 0.48);
+              pushBoxPt(-hw, y, z, boxCol, 4.6, 0.48);
+            }
+          }
+          // Overhanging lid top & rim seam
+          for (let x = -(hw + lidOver); x <= hw + lidOver; x += step) {
+            for (let z = -(hd + lidOver); z <= hd + lidOver; z += step) {
+              pushBoxPt(x, -hh, z, boxCol, 4.8, 0.58);
+            }
+          }
+          // Bright crisp lid perimeter & vertical corner edges
+          for (let k = 0; k <= 12; k++) {
+            const t = (k / 12) * 2 - 1;
+            const lw = hw + lidOver, ld = hd + lidOver;
+            pushBoxPt(t * lw, -hh,  ld, boxCol, 4.8, 0.85);
+            pushBoxPt(t * lw, -hh, -ld, boxCol, 4.8, 0.85);
+            pushBoxPt( lw, -hh, t * ld, boxCol, 4.8, 0.85);
+            pushBoxPt(-lw, -hh, t * ld, boxCol, 4.8, 0.85);
+            pushBoxPt(t * lw, -hh + lidH,  ld, boxCol, 4.0, 0.58);
+            pushBoxPt(t * lw, -hh + lidH, -ld, boxCol, 4.0, 0.58);
+            pushBoxPt( lw, -hh + lidH, t * ld, boxCol, 4.0, 0.58);
+            pushBoxPt(-lw, -hh + lidH, t * ld, boxCol, 4.0, 0.58);
+          }
+          [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].forEach(([cx, cz]) => {
+            for (let k = 0; k <= 9; k++) {
+              pushBoxPt(cx, -hh + (k / 9) * g.h, cz, boxCol, 4.6, 0.72);
             }
           });
-          // Soft translucent face stippling
-          for (let i = 0; i < 150; i++) {
-            const face = i % 5;
-            let lx = rand(-hw, hw), ly = rand(-hh, hh), lz = rand(-hd, hd);
-            if (face === 0) ly = -hh;
-            else if (face === 1) lz = hd;
-            else if (face === 2) lz = -hd;
-            else if (face === 3) lx = hw;
-            else lx = -hw;
-            pushBoxPt(lx, ly, lz, boxCol, rand(4.0, 6.2), rand(0.42, 0.72));
+
+          // Wide satin ribbon bands across lid + all 4 sides
+          for (let off = -1.6; off <= 1.6; off += 1.6) {
+            for (let k = 0; k <= 16; k++) {
+              const t = (k / 16) * 2 - 1;
+              pushBoxPt(t * (hw + lidOver), -hh - 0.8, off, ribCol, 4.8, 0.86);
+              pushBoxPt(off, -hh - 0.8, t * (hd + lidOver), ribCol, 4.8, 0.86);
+            }
+            for (let k = 0; k <= 10; k++) {
+              const ly = ((k / 10) * 2 - 1) * hh;
+              pushBoxPt(off, ly,  hd + 0.7, ribCol, 4.4, 0.80);
+              pushBoxPt(off, ly, -hd - 0.7, ribCol, 4.4, 0.80);
+              pushBoxPt( hw + 0.7, ly, off, ribCol, 4.4, 0.80);
+              pushBoxPt(-hw - 0.7, ly, off, ribCol, 4.4, 0.80);
+            }
           }
-          // Crossed satin ribbon bands on top + 4 vertical sides
-          for (let k = 0; k <= 18; k++) {
-            const t = (k / 18) * 2 - 1;
-            pushBoxPt(t * hw, -hh - 0.6, 0, ribCol, 5.2, 0.94);
-            pushBoxPt(0, -hh - 0.6, t * hd, ribCol, 5.2, 0.94);
+
+          // Sculpted 4-loop 3D gift bow on top + sparkling center knot
+          for (let loop = 0; loop < 4; loop++) {
+            const baseA = (loop * Math.PI) / 2 + Math.PI / 4;
+            const cA = Math.cos(baseA), sA = Math.sin(baseA);
+            for (let k = 0; k <= 14; k++) {
+              const u = (k / 14) * Math.PI;
+              const rad = Math.sin(u) * 10.5;
+              const hLift = Math.sin(u) * 7.2;
+              const spread = Math.cos(u) * 2.2;
+              pushBoxPt(
+                rad * cA - spread * sA,
+                -hh - 1.4 - hLift,
+                rad * sA + spread * cA,
+                ribCol, 4.8, 0.92
+              );
+            }
           }
-          for (let k = 0; k <= 13; k++) {
-            const ly = ((k / 13) * 2 - 1) * hh;
-            pushBoxPt(0, ly, hd + 0.5, ribCol, 4.8, 0.88);
-            pushBoxPt(0, ly, -hd - 0.5, ribCol, 4.8, 0.88);
-            pushBoxPt(hw + 0.5, ly, 0, ribCol, 4.8, 0.88);
-            pushBoxPt(-hw - 0.5, ly, 0, ribCol, 4.8, 0.88);
-          }
-          // 3D double-loop bow on top
-          for (let k = 0; k < 30; k++) {
-            const t = (k / 30) * Math.PI * 2;
-            const bx = Math.sin(t) * 10.5;
-            const by = -hh - 2.6 - Math.abs(Math.sin(t)) * 5.6;
-            const bz = Math.sin(2 * t) * 4.5;
-            pushBoxPt(bx, by, bz, ribCol, 5.0, 0.94);
-          }
-          // Warm inner core glow
-          pushBoxPt(0, 0, 0, boxCol, 34, 0.30, 2);
+          pushBoxPt(0, -hh - 2.4, 0, '#ffffff', 12.0, 0.96, 1);
+          pushBoxPt(0, 0, 0, boxCol, 42, 0.28, 2);
         });
 
         // 7. Wide Milky Way Spiral Galaxy Base (5,200 particles)
@@ -1928,101 +1986,146 @@
       // ==================== Polaroid Photo Frames & Click Bursts ====================
       let photoFrames = [];
       let activePhotoIdx = 0;
+      let slideshowTimer = null;
       let bursts = [];
 
       const DEFAULT_PHOTO_CARDS = [
-        { caption: 'Starlight Over Winter', kind: 'tree', bg: ['#191028', '#301438'], accent: '#ffd88a' },
-        { caption: 'Midnight Fireworks', kind: 'fireworks', bg: ['#0e1830', '#24143a'], accent: '#ff94c8' },
-        { caption: 'Beneath the Same Sky', kind: 'moon', bg: ['#0d1e32', '#1d2d4a'], accent: '#ffe6a8' },
-        { caption: 'Warmth in December', kind: 'heart', bg: ['#280e24', '#461638'], accent: '#ff8cc8' },
-        { caption: 'Golden Milky Way', kind: 'galaxy', bg: ['#1c140c', '#362114'], accent: '#ffd479' },
-        { caption: 'Forever & Always', kind: 'snow', bg: ['#0a2028', '#143440'], accent: '#9effd8' }
+        { caption: 'Starlight Over Winter', kind: 'tree', bg: ['#22143a', '#482058'], accent: '#ffd88a' },
+        { caption: 'Midnight Fireworks', kind: 'fireworks', bg: ['#132042', '#351b54'], accent: '#ff94c8' },
+        { caption: 'Beneath the Same Sky', kind: 'moon', bg: ['#102544', '#26426e'], accent: '#ffe8ad' },
+        { caption: 'Warmth in December', kind: 'heart', bg: ['#341232', '#641e4f'], accent: '#ff8cc8' },
+        { caption: 'Golden Milky Way', kind: 'galaxy', bg: ['#2c1c10', '#54321c'], accent: '#ffd67d' },
+        { caption: 'Forever & Always', kind: 'snow', bg: ['#102c38', '#1e4d5e'], accent: '#9effd8' }
       ];
 
       function renderArtCardUrl(spec, idx) {
         const c = document.createElement('canvas');
-        c.width = 280; c.height = 280;
+        c.width = 360; c.height = 360;
         const ctx = c.getContext('2d');
-        const g = ctx.createLinearGradient(0, 0, 0, 280);
+        const g = ctx.createLinearGradient(0, 0, 0, 360);
         g.addColorStop(0, spec.bg[0]);
-        g.addColorStop(1, spec.bg[1]);
+        g.addColorStop(0.68, spec.bg[1]);
+        g.addColorStop(1, '#120d1d');
         ctx.fillStyle = g;
-        ctx.fillRect(0, 0, 280, 280);
+        ctx.fillRect(0, 0, 360, 360);
 
-        // Soft ambient glow
-        const rg = ctx.createRadialGradient(140, 128, 8, 140, 128, 120);
-        rg.addColorStop(0, hexToRgba(spec.accent, 0.36));
+        // Luminous aurora/sky bloom
+        const rg = ctx.createRadialGradient(180, 150, 14, 180, 150, 165);
+        rg.addColorStop(0, hexToRgba(spec.accent, 0.56));
+        rg.addColorStop(0.55, hexToRgba(spec.accent, 0.18));
         rg.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = rg;
-        ctx.fillRect(0, 0, 280, 280);
+        ctx.fillRect(0, 0, 360, 360);
 
-        // Starfield dots
-        for (let i = 0; i < 42; i++) {
-          const sx = ((i * 73 + idx * 41) % 260) + 10;
-          const sy = ((i * 53 + idx * 29) % 190) + 10;
-          const sr = (i % 4 === 0) ? 1.8 : 0.9;
-          ctx.fillStyle = `rgba(255,255,255,${0.35 + (i % 5) * 0.12})`;
+        // Soft bokeh circles
+        for (let b = 0; b < 10; b++) {
+          const bx = ((b * 97 + idx * 53) % 300) + 30;
+          const by = ((b * 61 + idx * 37) % 210) + 30;
+          const br = 12 + (b % 4) * 9;
+          ctx.fillStyle = hexToRgba(spec.accent, 0.10 + (b % 3) * 0.04);
+          ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Crisp starfield
+        for (let i = 0; i < 65; i++) {
+          const sx = ((i * 73 + idx * 41) % 340) + 10;
+          const sy = ((i * 53 + idx * 29) % 245) + 10;
+          const sr = (i % 5 === 0) ? 2.2 : 1.1;
+          ctx.fillStyle = `rgba(255,255,255,${0.42 + (i % 5) * 0.12})`;
           ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
         }
 
         ctx.save();
         if (spec.kind === 'tree') {
-          for (let y = 0; y < 130; y += 4) {
-            const w = (y / 130) * 56;
-            for (let x = -w; x <= w; x += 6) {
-              ctx.fillStyle = hexToRgba(spec.accent, 0.55 + Math.random() * 0.4);
-              ctx.beginPath(); ctx.arc(140 + x + Math.sin(y) * 2, 72 + y, 1.5, 0, Math.PI * 2); ctx.fill();
+          for (let y = 0; y < 168; y += 4.5) {
+            const w = (y / 168) * 76;
+            for (let x = -w; x <= w; x += 6.5) {
+              ctx.fillStyle = hexToRgba(spec.accent, 0.65 + (Math.abs(x) < w * 0.4 ? 0.3 : 0.1));
+              ctx.beginPath(); ctx.arc(180 + x + Math.sin(y * 0.12) * 2.5, 86 + y, 2.0, 0, Math.PI * 2); ctx.fill();
             }
           }
-          ctx.fillStyle = '#fff9e6';
-          ctx.beginPath(); ctx.arc(140, 62, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fffaf0';
+          ctx.shadowColor = spec.accent; ctx.shadowBlur = 16;
+          ctx.beginPath(); ctx.arc(180, 74, 7.5, 0, Math.PI * 2); ctx.fill();
         } else if (spec.kind === 'fireworks') {
-          for (let f = 0; f < 2; f++) {
-            const fx = f === 0 ? 96 : 186, fy = f === 0 ? 112 : 94;
-            for (let a = 0; a < 22; a++) {
-              const ang = (a / 22) * Math.PI * 2;
-              const len = 34 + (a % 3) * 10;
-              ctx.strokeStyle = hexToRgba(spec.accent, 0.8);
-              ctx.lineWidth = 1.6;
-              ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + Math.cos(ang) * len, fy + Math.sin(ang) * len); ctx.stroke();
+          [[125, 138, 62], [235, 110, 52]].forEach(([fx, fy, rad], fIdx) => {
+            const col = fIdx === 0 ? spec.accent : '#ffe39e';
+            for (let a = 0; a < 28; a++) {
+              const ang = (a / 28) * Math.PI * 2;
+              const len = rad * (0.72 + (a % 3) * 0.18);
+              const grd = ctx.createLinearGradient(fx, fy, fx + Math.cos(ang) * len, fy + Math.sin(ang) * len);
+              grd.addColorStop(0, 'rgba(255,255,255,0)');
+              grd.addColorStop(1, col);
+              ctx.strokeStyle = grd;
+              ctx.lineWidth = 2.4;
+              ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + Math.cos(ang) * len, fy + Math.sin(ang) * len + 8); ctx.stroke();
             }
-          }
+          });
         } else if (spec.kind === 'moon') {
-          ctx.fillStyle = '#fff3d6';
-          ctx.beginPath(); ctx.arc(140, 118, 34, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowColor = spec.accent; ctx.shadowBlur = 24;
+          ctx.fillStyle = '#fff5d8';
+          ctx.beginPath(); ctx.arc(180, 140, 44, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
           ctx.fillStyle = spec.bg[0];
-          ctx.beginPath(); ctx.arc(154, 110, 30, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(198, 128, 38, 0, Math.PI * 2); ctx.fill();
         } else if (spec.kind === 'heart') {
-          ctx.strokeStyle = spec.accent;
-          ctx.lineWidth = 2.4;
+          ctx.shadowColor = spec.accent; ctx.shadowBlur = 22;
+          ctx.strokeStyle = '#ffd4eb';
+          ctx.lineWidth = 3.2;
           ctx.beginPath();
-          for (let i = 0; i <= 60; i++) {
-            const t = (i / 60) * Math.PI * 2;
-            const hx = 140 + 16 * Math.pow(Math.sin(t), 3) * 3.2;
-            const hy = 128 - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * 3.2;
+          for (let i = 0; i <= 72; i++) {
+            const t = (i / 72) * Math.PI * 2;
+            const hx = 180 + 16 * Math.pow(Math.sin(t), 3) * 4.4;
+            const hy = 152 - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * 4.4;
             if (i === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
           }
           ctx.stroke();
         } else if (spec.kind === 'galaxy') {
-          for (let r = 20; r <= 78; r += 16) {
-            ctx.strokeStyle = hexToRgba(spec.accent, 0.55);
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.ellipse(140, 140, r, r * 0.42, -0.22, 0, Math.PI * 2); ctx.stroke();
+          for (let r = 24; r <= 102; r += 18) {
+            ctx.strokeStyle = hexToRgba(spec.accent, 0.68);
+            ctx.lineWidth = 2.6;
+            ctx.beginPath(); ctx.ellipse(180, 165, r, r * 0.42, -0.22, 0, Math.PI * 2); ctx.stroke();
           }
+          ctx.fillStyle = '#fff7e0';
+          ctx.shadowColor = spec.accent; ctx.shadowBlur = 24;
+          ctx.beginPath(); ctx.arc(180, 165, 10, 0, Math.PI * 2); ctx.fill();
         } else {
+          ctx.strokeStyle = '#e8fff6';
+          ctx.shadowColor = spec.accent; ctx.shadowBlur = 16;
+          ctx.lineWidth = 2.6;
           for (let i = 0; i < 6; i++) {
             const ang = (i / 6) * Math.PI * 2;
-            ctx.strokeStyle = spec.accent;
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(140 + Math.cos(ang) * 44, 130 + Math.sin(ang) * 44); ctx.stroke();
+            const ex = 180 + Math.cos(ang) * 58, ey = 152 + Math.sin(ang) * 58;
+            ctx.beginPath(); ctx.moveTo(180, 152); ctx.lineTo(ex, ey); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(180 + Math.cos(ang) * 36, 152 + Math.sin(ang) * 36);
+            ctx.lineTo(180 + Math.cos(ang + 0.4) * 48, 152 + Math.sin(ang + 0.4) * 48);
+            ctx.moveTo(180 + Math.cos(ang) * 36, 152 + Math.sin(ang) * 36);
+            ctx.lineTo(180 + Math.cos(ang - 0.4) * 48, 152 + Math.sin(ang - 0.4) * 48);
+            ctx.stroke();
           }
         }
         ctx.restore();
 
-        // Horizon silhouette
-        ctx.fillStyle = 'rgba(4, 6, 14, 0.55)';
-        ctx.fillRect(0, 232, 280, 48);
-        return c.toDataURL('image/jpeg', 0.88);
+        // Soft rolling snowy hills silhouette instead of flat dark bar
+        ctx.fillStyle = 'rgba(10, 14, 28, 0.72)';
+        ctx.beginPath();
+        ctx.moveTo(0, 300);
+        ctx.quadraticCurveTo(95, 274, 185, 294);
+        ctx.quadraticCurveTo(280, 312, 360, 282);
+        ctx.lineTo(360, 360); ctx.lineTo(0, 360);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = hexToRgba(spec.accent, 0.14);
+        ctx.beginPath();
+        ctx.moveTo(0, 314);
+        ctx.quadraticCurveTo(130, 292, 245, 312);
+        ctx.quadraticCurveTo(315, 322, 360, 304);
+        ctx.lineTo(360, 360); ctx.lineTo(0, 360);
+        ctx.closePath();
+        ctx.fill();
+        return c.toDataURL('image/jpeg', 0.90);
       }
 
       function setPolaroidItems(items) {
@@ -2034,7 +2137,7 @@
           const total = list.length;
           const hNorm = 0.25 + (idx / Math.max(1, total - 1)) * 0.60;
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * 1.12 + 20;
+          const r = hNorm * TREE_RADIUS * 1.12 + 22;
           const angle = idx * 2.39996 + 0.4;
           const [sx, sy, sz] = randomSpherePoint(190, 360);
           photoFrames.push({
@@ -2043,8 +2146,9 @@
             caption: item.caption || 'Winter Memories ♥',
             tx: Math.cos(angle) * r, ty: y, tz: Math.sin(angle) * r,
             sx, sy, sz,
-            tilt: rand(-0.12, 0.12),
-            screenRect: null
+            tilt: rand(-0.11, 0.11),
+            screenRect: null,
+            depth: 9999
           });
         });
         document.getElementById('btnPhotos').classList.toggle('active', photoFrames.length > 0);
@@ -2074,6 +2178,35 @@
       const modalImg = document.getElementById('modalImg');
       const modalCaption = document.getElementById('modalCaption');
       const modalCounter = document.getElementById('modalCounter');
+      const modalDots = document.getElementById('modalDots');
+      const modalPlayBtn = document.getElementById('modalPlayBtn');
+
+      function stopSlideshow() {
+        if (slideshowTimer) {
+          clearInterval(slideshowTimer);
+          slideshowTimer = null;
+        }
+        modalPlayBtn.textContent = '▶ Slideshow';
+      }
+
+      function toggleSlideshow() {
+        if (slideshowTimer) {
+          stopSlideshow();
+        } else {
+          modalPlayBtn.textContent = '⏸ Pause';
+          slideshowTimer = setInterval(() => showPhotoAt(activePhotoIdx + 1), 2600);
+        }
+      }
+
+      function renderModalDots() {
+        modalDots.innerHTML = '';
+        for (let i = 0; i < photoFrames.length; i++) {
+          const d = document.createElement('button');
+          d.className = 'modal-dot' + (i === activePhotoIdx ? ' active' : '');
+          d.addEventListener('click', (e) => { e.stopPropagation(); showPhotoAt(i); });
+          modalDots.appendChild(d);
+        }
+      }
 
       function showPhotoAt(index) {
         if (!photoFrames.length) return;
@@ -2082,6 +2215,7 @@
         modalImg.src = frame.url;
         modalCaption.textContent = frame.caption || 'Winter Memories ♥';
         modalCounter.textContent = `${activePhotoIdx + 1} / ${photoFrames.length}`;
+        renderModalDots();
       }
 
       function openPhotoModal(frame) {
@@ -2089,6 +2223,11 @@
         const idx = photoFrames.indexOf(frame);
         showPhotoAt(idx >= 0 ? idx : 0);
         photoModal.classList.add('show');
+      }
+
+      function closePhotoModal() {
+        stopSlideshow();
+        photoModal.classList.remove('show');
       }
 
       document.getElementById('modalPrev').addEventListener('click', (e) => {
@@ -2099,16 +2238,20 @@
         e.stopPropagation();
         showPhotoAt(activePhotoIdx + 1);
       });
+      modalPlayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSlideshow();
+      });
       document.getElementById('modalCloseBtn').addEventListener('click', (e) => {
         e.stopPropagation();
-        photoModal.classList.remove('show');
+        closePhotoModal();
       });
       document.getElementById('modalUploadBtn').addEventListener('click', (e) => {
         e.stopPropagation();
         photoInput.click();
       });
       document.getElementById('polaroidStage').addEventListener('click', (e) => e.stopPropagation());
-      photoModal.addEventListener('click', () => photoModal.classList.remove('show'));
+      photoModal.addEventListener('click', closePhotoModal);
 
       let modalTouchX = 0;
       photoModal.addEventListener('touchstart', (e) => { modalTouchX = e.touches[0]?.clientX || 0; }, { passive: true });
@@ -2277,10 +2420,12 @@
           ovCtx.globalCompositeOperation = 'source-over';
           for (let i = 0; i < projectedFrames.length; i++) {
             const { pf, p } = projectedFrames[i];
-            const cardW = (32 + state.scatter * 16) * p.scale;
-            const cardH = cardW * 1.22;
+            pf.depth = p.depth;
+            const rotSq = Math.max(0.56, Math.min(1.0, (camDist + 140 - p.depth) / 240));
+            const cardW = (34 + state.scatter * 16) * p.scale * (0.72 + 0.28 * rotSq);
+            const cardH = (34 + state.scatter * 16) * p.scale * 1.24;
             const pad = cardW * 0.085;
-            const depthFade = p.depth > camDist + 35 ? 0.42 : (p.depth > camDist - 10 ? 0.72 : 0.96);
+            const depthFade = p.depth > camDist + 30 ? 0.34 : (p.depth > camDist - 10 ? 0.68 : 0.96);
             pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
 
             ovCtx.save();
@@ -2292,30 +2437,42 @@
             if (state.scatter < 0.4) {
               const cordAlpha = (1 - state.scatter / 0.4) * depthFade * fade;
               ovCtx.save();
-              ovCtx.globalAlpha = cordAlpha * 0.8;
+              ovCtx.globalAlpha = cordAlpha * 0.85;
               ovCtx.strokeStyle = theme.accent;
-              ovCtx.lineWidth = Math.max(0.8, 1.1 * p.scale);
+              ovCtx.lineWidth = Math.max(0.9, 1.15 * p.scale);
               ovCtx.beginPath();
               ovCtx.moveTo(0, -cardH * 0.5);
-              ovCtx.lineTo(0, -cardH * 0.5 - 9 * p.scale);
+              ovCtx.lineTo(0, -cardH * 0.5 - 10 * p.scale);
               ovCtx.stroke();
-              ovCtx.fillStyle = '#fff8e6';
+              ovCtx.fillStyle = '#fff9eb';
               ovCtx.beginPath();
-              ovCtx.arc(0, -cardH * 0.5 - 9 * p.scale, Math.max(1.5, 2.1 * p.scale), 0, Math.PI * 2);
+              ovCtx.arc(0, -cardH * 0.5 - 10 * p.scale, Math.max(1.6, 2.2 * p.scale), 0, Math.PI * 2);
               ovCtx.fill();
               ovCtx.restore();
             }
 
-            ovCtx.shadowColor = hexToRgba(theme.accent, 0.48);
-            ovCtx.shadowBlur = 10 * p.scale;
-            ovCtx.fillStyle = '#fcfaf5';
+            ovCtx.shadowColor = hexToRgba(theme.accent, 0.52);
+            ovCtx.shadowBlur = 11 * p.scale;
+            ovCtx.fillStyle = '#faf5ea';
             ovCtx.fillRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
             ovCtx.shadowBlur = 0;
+
             const imgW = cardW - pad * 2;
-            const imgH = cardH - pad * 3.2;
+            const imgH = cardH - pad * 3.5;
             ovCtx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
+
+            // Subtle warm border line + tiny bottom accent mark on Polaroid chin
+            ovCtx.strokeStyle = 'rgba(180, 150, 110, 0.28)';
+            ovCtx.lineWidth = 0.7;
+            ovCtx.strokeRect(-imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
+            ovCtx.fillStyle = hexToRgba(theme.accent, 0.75);
+            ovCtx.beginPath();
+            ovCtx.arc(0, cardH * 0.5 - pad * 1.1, Math.max(0.9, 1.3 * p.scale), 0, Math.PI * 2);
+            ovCtx.fill();
             ovCtx.restore();
           }
+        } else {
+          for (let i = 0; i < photoFrames.length; i++) photoFrames[i].screenRect = null;
         }
 
         if (bursts.length > 0) {
@@ -2420,18 +2577,20 @@
 
       function onPointerEnd(e) {
         if (activePointers.size === 1 && state.dragMoved < 8) {
-          let hitPhoto = false;
+          let hitPhoto = null;
           if (photoFrames.length > 0) {
-            for (let i = photoFrames.length - 1; i >= 0; i--) {
-              const r = photoFrames[i].screenRect;
+            const frontFirst = photoFrames.slice().sort((a, b) => (a.depth || 9999) - (b.depth || 9999));
+            for (let i = 0; i < frontFirst.length; i++) {
+              const r = frontFirst[i].screenRect;
               if (r && e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h) {
-                openPhotoModal(photoFrames[i]);
-                hitPhoto = true;
+                hitPhoto = frontFirst[i];
                 break;
               }
             }
           }
-          if (!hitPhoto && state.fireworksEnabled && e.clientY < state.height * 0.62) {
+          if (hitPhoto) {
+            openPhotoModal(hitPhoto);
+          } else if (state.fireworksEnabled && e.clientY < state.height * 0.62) {
             launchFirework(e.clientX / state.width, Math.max(0.10, e.clientY / state.height));
           }
         }
@@ -2475,7 +2634,7 @@
         }
         if (e.code === 'Space') { e.preventDefault(); toggleScatter(); }
         else if (e.key === 'h' || e.key === 'H') toggleZenMode();
-        else if (e.key === 'Escape') photoModal.classList.remove('show');
+        else if (e.key === 'Escape') closePhotoModal();
       });
 
       document.querySelectorAll('.theme-chip').forEach(btn => {
@@ -2542,7 +2701,10 @@
       });
 
       const photoInput = document.getElementById('photoInput');
-      document.getElementById('btnPhotos').addEventListener('click', () => photoInput.click());
+      document.getElementById('btnPhotos').addEventListener('click', () => {
+        if (photoFrames.length > 0) openPhotoModal(photoFrames[0]);
+        else photoInput.click();
+      });
       document.getElementById('btnUploadPhotos').addEventListener('click', () => photoInput.click());
       document.getElementById('btnDefaultPhotos').addEventListener('click', () => loadDefaultPolaroids(true));
       photoInput.addEventListener('change', (e) => {
@@ -2554,7 +2716,7 @@
       document.getElementById('btnClearPhotos').addEventListener('click', () => {
         photoFrames = [];
         document.getElementById('btnPhotos').classList.remove('active');
-        photoModal.classList.remove('show');
+        closePhotoModal();
         showToast('Cleared Polaroid photos');
       });
 
