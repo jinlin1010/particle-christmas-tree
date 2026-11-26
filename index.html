@@ -427,7 +427,8 @@
       padding: 15px 15px 24px;
       border-radius: 7px;
       box-shadow: 0 24px 64px rgba(0, 0, 0, 0.78), 0 0 42px rgba(255, 214, 138, 0.24);
-      width: 100%;
+      width: fit-content;
+      max-width: min(84vw, 440px);
       transform: scale(0.9) rotate(-1deg);
       transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
       text-align: center;
@@ -437,12 +438,14 @@
 
     .polaroid-focus img {
       display: block;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      max-height: 52vh;
-      object-fit: cover;
+      width: auto;
+      height: auto;
+      max-width: min(76vw, 400px);
+      max-height: 58vh;
+      margin: 0 auto;
+      object-fit: contain;
       border-radius: 3px;
-      background: #0d0f18;
+      background: #14121b;
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
     }
 
@@ -2096,6 +2099,23 @@
         return c.toDataURL('image/jpeg', 0.90);
       }
 
+      function drawImageCover(ctx, img, dx, dy, dw, dh) {
+        const iw = img.naturalWidth || img.width;
+        const ih = img.naturalHeight || img.height;
+        if (!iw || !ih) return;
+        const imgAspect = iw / ih;
+        const boxAspect = dw / dh;
+        let sx = 0, sy = 0, sw = iw, sh = ih;
+        if (imgAspect > boxAspect) {
+          sw = ih * boxAspect;
+          sx = (iw - sw) * 0.5;
+        } else if (imgAspect < boxAspect) {
+          sh = iw / boxAspect;
+          sy = (ih - sh) * 0.5;
+        }
+        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+      }
+
       function setPolaroidItems(items) {
         photoFrames = [];
         const list = items.slice(0, 18);
@@ -2389,10 +2409,15 @@
           for (let i = 0; i < projectedFrames.length; i++) {
             const { pf, p } = projectedFrames[i];
             pf.depth = p.depth;
-            const rotSq = Math.max(0.56, Math.min(1.0, (camDist + 140 - p.depth) / 240));
-            const cardW = (34 + state.scatter * 16) * p.scale * (0.72 + 0.28 * rotSq);
-            const cardH = (34 + state.scatter * 16) * p.scale * 1.24;
-            const pad = cardW * 0.085;
+            const natW = pf.img.naturalWidth || 1;
+            const natH = pf.img.naturalHeight || 1;
+            const imgRatio = Math.max(0.68, Math.min(1.45, natW / natH));
+            const baseScale = (34 + state.scatter * 16) * p.scale;
+            const imgW = imgRatio >= 1 ? baseScale * 0.94 : baseScale * 0.94 * imgRatio;
+            const imgH = imgRatio >= 1 ? (baseScale * 0.94) / imgRatio : baseScale * 0.94;
+            const pad = Math.max(imgW, imgH) * 0.095;
+            const cardW = imgW + pad * 2;
+            const cardH = imgH + pad * 3.4;
             const depthFade = p.depth > camDist + 30 ? 0.34 : (p.depth > camDist - 10 ? 0.68 : 0.96);
             pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
 
@@ -2425,9 +2450,7 @@
             ovCtx.fillRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
             ovCtx.shadowBlur = 0;
 
-            const imgW = cardW - pad * 2;
-            const imgH = cardH - pad * 3.5;
-            ovCtx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
+            drawImageCover(ovCtx, pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
 
             // Subtle warm border line + tiny bottom accent mark on Polaroid chin
             ovCtx.strokeStyle = 'rgba(180, 150, 110, 0.28)';
@@ -2732,7 +2755,10 @@
         }
       });
 
-      // ==================== Music Box ====================
+      // ==================== Background Music (Song Track + Music Box Fallback) ====================
+      const BGM_SRC = '';
+      const BGM_LABEL = 'Music Box';
+      let bgmAudio = null;
       let audioCtx = null, musicPlaying = false, musicTimer = null, noteIndex = 0;
       const MELODY = [
         [392, 1], [523.25, 1], [523.25, 0.5], [587.33, 0.5], [523.25, 0.5], [493.88, 0.5],
@@ -2772,21 +2798,56 @@
         musicTimer = setTimeout(scheduleNextNote, durMs);
       }
 
-      document.getElementById('btnMusic').addEventListener('click', () => {
-        musicPlaying = !musicPlaying;
-        document.getElementById('btnMusic').classList.toggle('active', musicPlaying);
+      function setMusicUi(on) {
+        musicPlaying = on;
+        document.getElementById('btnMusic').classList.toggle('active', on);
+        const mobM = document.getElementById('mobMusic');
+        if (mobM) mobM.classList.toggle('active', on);
+      }
+
+      async function toggleMusic(silentIfBlocked = false) {
         if (musicPlaying) {
-          if (!audioCtx) {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioCtx();
-          }
-          if (audioCtx.state === 'suspended') audioCtx.resume();
-          scheduleNextNote();
-          showToast('Music Box On ♪');
-        } else {
+          setMusicUi(false);
           clearTimeout(musicTimer);
+          if (bgmAudio) bgmAudio.pause();
+          return;
         }
-      });
+        if (BGM_SRC) {
+          try {
+            if (!bgmAudio) {
+              bgmAudio = new Audio(BGM_SRC);
+              bgmAudio.loop = true;
+              bgmAudio.volume = 0.72;
+              bgmAudio.preload = 'auto';
+            }
+            await bgmAudio.play();
+            setMusicUi(true);
+            showToast(`♪ ${BGM_LABEL}`);
+            return;
+          } catch (err) {
+            if (silentIfBlocked) return;
+          }
+        }
+        if (!audioCtx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioCtx();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        setMusicUi(true);
+        scheduleNextNote();
+        showToast(`${BGM_LABEL} On ♪`);
+      }
+
+      document.getElementById('btnMusic').addEventListener('click', () => toggleMusic(false));
+      if (BGM_SRC) {
+        const unlockBgmOnce = () => {
+          if (!musicPlaying) toggleMusic(true);
+          window.removeEventListener('pointerdown', unlockBgmOnce);
+          window.removeEventListener('keydown', unlockBgmOnce);
+        };
+        window.addEventListener('pointerdown', unlockBgmOnce, { once: true });
+        window.addEventListener('keydown', unlockBgmOnce, { once: true });
+      }
 
       // ==================== Hand Gesture Control ====================
       const btnGesture = document.getElementById('btnGesture');
