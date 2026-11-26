@@ -397,11 +397,13 @@
       position: fixed;
       inset: 0;
       z-index: 35;
-      background: rgba(4, 6, 14, 0.68);
-      backdrop-filter: blur(8px);
+      background: rgba(4, 6, 14, 0.76);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 14px;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.28s ease;
@@ -410,25 +412,37 @@
 
     .photo-modal.show { opacity: 1; pointer-events: auto; }
 
+    .polaroid-stage {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      max-width: min(84vw, 390px);
+    }
+
     .polaroid-focus {
+      position: relative;
       background: #fdfbf7;
-      padding: 14px 14px 36px;
+      padding: 14px 14px 28px;
       border-radius: 6px;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 38px rgba(255, 214, 138, 0.35);
-      max-width: min(86vw, 380px);
-      transform: scale(0.88) rotate(-1.5deg);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.72), 0 0 38px rgba(255, 214, 138, 0.28);
+      width: 100%;
+      transform: scale(0.9) rotate(-1deg);
       transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
       text-align: center;
     }
 
-    .photo-modal.show .polaroid-focus { transform: scale(1) rotate(-1deg); }
+    .photo-modal.show .polaroid-focus { transform: scale(1) rotate(-0.6deg); }
 
     .polaroid-focus img {
       display: block;
       width: 100%;
-      max-height: 62vh;
+      aspect-ratio: 1 / 1;
+      max-height: 54vh;
       object-fit: cover;
       border-radius: 2px;
+      background: #0d0f18;
     }
 
     .polaroid-caption {
@@ -437,7 +451,62 @@
       font-family: "Georgia", serif;
       font-style: italic;
       font-size: 14px;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
+    }
+
+    .polaroid-meta {
+      margin-top: 4px;
+      color: #9a8874;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+    }
+
+    .modal-nav {
+      appearance: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(14, 18, 30, 0.65);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .modal-nav:hover {
+      background: rgba(255, 255, 255, 0.16);
+      transform: scale(1.06);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .modal-chip {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(14, 18, 30, 0.65);
+      color: rgba(255, 255, 255, 0.88);
+      border-radius: 999px;
+      padding: 6px 13px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .modal-chip:hover { background: rgba(255, 255, 255, 0.16); }
+
+    @media (max-width: 540px) {
+      .photo-modal { gap: 8px; padding: 14px; }
+      .modal-nav { width: 34px; height: 34px; font-size: 18px; }
     }
 
     body.zen-mode .top-hint,
@@ -529,6 +598,7 @@
         <div class="section-label">Quick Actions</div>
         <div class="row-btns">
           <button class="mini-btn" id="mobReplay">🎬 Replay</button>
+          <button class="mini-btn" id="mobPhotos">📷 Photos</button>
           <button class="mini-btn" id="mobMusic">🎵 Music</button>
           <button class="mini-btn" id="mobGesture">🖐️ Gesture</button>
         </div>
@@ -583,6 +653,7 @@
         <div class="section-label">Polaroid Photo Wall</div>
         <div class="row-btns">
           <button class="mini-btn" id="btnUploadPhotos">📷 Add Photos</button>
+          <button class="mini-btn" id="btnDefaultPhotos">✨ Default</button>
           <button class="mini-btn" id="btnClearPhotos">Clear</button>
         </div>
       </div>
@@ -605,10 +676,19 @@
   </div>
 
   <div class="photo-modal" id="photoModal">
-    <div class="polaroid-focus">
-      <img id="modalImg" src="" alt="Memory" />
-      <div class="polaroid-caption" id="modalCaption">Winter Memories ♥</div>
+    <button class="modal-nav" id="modalPrev" title="Previous">‹</button>
+    <div class="polaroid-stage" id="polaroidStage">
+      <div class="polaroid-focus">
+        <img id="modalImg" src="" alt="Memory" />
+        <div class="polaroid-caption" id="modalCaption">Winter Memories ♥</div>
+        <div class="polaroid-meta" id="modalCounter">1 / 6</div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-chip" id="modalUploadBtn">📷 Add Your Photos</button>
+        <button class="modal-chip" id="modalCloseBtn">✕ Close</button>
+      </div>
     </div>
+    <button class="modal-nav" id="modalNext" title="Next">›</button>
   </div>
 
   <script>
@@ -638,6 +718,7 @@
           treeColors: ['#fff8e6', '#ffe08a', '#ffc152', '#f29530', '#ffe9ad'],
           ribbonColors: ['#ffffff', '#fff2c8', '#ffd670'],
           ornamentColors: ['#fff5d6', '#ffd166', '#ff824a', '#ffffff'],
+          giftColors: ['#ff6e68', '#ffd57e', '#ff9b5e', '#f2b880', '#e85d75'],
           ringColors: ['#ffe4a3', '#ffb95c', '#ffd68a'],
           topperColor: '#ffd470',
           topperRidge: '#fff9e6',
@@ -651,6 +732,7 @@
           treeColors: ['#fff2f9', '#ffc4e4', '#ff84c8', '#dc68ff', '#b285ff'],
           ribbonColors: ['#ffffff', '#ffdcf0', '#ff94d2'],
           ornamentColors: ['#fff0f6', '#ff9cd2', '#ffe0a3', '#d08eff'],
+          giftColors: ['#ff88c2', '#ffd694', '#c996ff', '#ff6e9c', '#ffc4e0'],
           ringColors: ['#ffb8de', '#d88cff', '#ff94c8'],
           topperColor: '#ff85ca',
           topperRidge: '#fff2fa',
@@ -664,6 +746,7 @@
           treeColors: ['#ffffff', '#c7f6ff', '#6ee4ff', '#3bb2ff', '#86a2ff'],
           ribbonColors: ['#ffffff', '#c8f7ff', '#62daff'],
           ornamentColors: ['#ffe694', '#6ee5ff', '#ffffff', '#7aa2ff'],
+          giftColors: ['#68d8ff', '#92a8ff', '#ffd984', '#58b4ff', '#c8f2ff'],
           ringColors: ['#a6eeff', '#4dc0ff', '#7ce8ff'],
           topperColor: '#7ae8ff',
           topperRidge: '#f2fdff',
@@ -677,6 +760,7 @@
           treeColors: ['#f2fff8', '#a6ffd9', '#42f0b4', '#40c2ff', '#a28cff'],
           ribbonColors: ['#ffffff', '#c0ffe5', '#68f4ff'],
           ornamentColors: ['#ffe58f', '#ff7aa8', '#6effc8', '#ffffff'],
+          giftColors: ['#6ef0c2', '#ffd888', '#6ec8ff', '#ff8ec0', '#b49cff'],
           ringColors: ['#7effce', '#5cc5ff', '#9effd3'],
           topperColor: '#ff8cc8',
           topperRidge: '#fff2fa',
@@ -1183,6 +1267,107 @@
           }
           pushPt(0, topCY - 2, 0, 0, -160, 0, theme.topperColor, 40, 0.28, 0, 2.0, 2, 0, 2, 0.96);
         }
+
+        // 6b. Restrained 12 Tiny Stardust Branch Bows (accent scale contrast without cluttering tree)
+        for (let b = 0; b < 12; b++) {
+          const hNorm = 0.28 + (b / 12) * 0.56;
+          const by = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const br = hNorm * TREE_RADIUS * 1.04 + 4;
+          const ang = b * 2.39996 + 0.55;
+          const bx0 = Math.cos(ang) * br, bz0 = Math.sin(ang) * br;
+          const txDir = -Math.sin(ang), tzDir = Math.cos(ang);
+          const bCol = theme.giftColors[b % theme.giftColors.length];
+          for (let k = 0; k < 20; k++) {
+            const t = (k / 20) * Math.PI * 2;
+            const lx = Math.sin(t) * 5.2;
+            const ly = Math.sin(2 * t) * 2.6;
+            const [sx, sy, sz] = randomSpherePoint(180, 480);
+            pushPt(
+              bx0 + txDir * lx, by + ly, bz0 + tzDir * lx,
+              sx, sy, sz,
+              bCol, 4.2, 0.72, b * 0.6, 2.4,
+              0, 0, 0, 0.22 + (1.0 - hNorm) * 0.65
+            );
+          }
+          const [sx, sy, sz] = randomSpherePoint(180, 480);
+          pushPt(bx0, by, bz0, sx, sy, sz, '#fff8e8', 11.5, 0.85, b, 2.8, 0, 0, 1, 0.22 + (1.0 - hNorm) * 0.65);
+        }
+
+        // 6c. 5 Sculpted 3D Luminous Gift Boxes around the Tree Base (anchors the tree into the Milky Way)
+        const giftSpecs = [
+          { ang: 0.35, rad: 156, w: 36, h: 30, d: 36, yaw: 0.42 },
+          { ang: 1.55, rad: 174, w: 32, h: 38, d: 32, yaw: -0.35 },
+          { ang: 2.82, rad: 162, w: 42, h: 26, d: 34, yaw: 0.78 },
+          { ang: 4.12, rad: 178, w: 34, h: 32, d: 34, yaw: -0.52 },
+          { ang: 5.26, rad: 152, w: 30, h: 26, d: 30, yaw: 0.28 }
+        ];
+        giftSpecs.forEach((g, gIdx) => {
+          const cx0 = Math.cos(g.ang) * g.rad;
+          const cz0 = Math.sin(g.ang) * g.rad;
+          const baseY = TREE_BASE_Y + 12;
+          const cy0 = baseY - g.h * 0.5;
+          const cs = Math.cos(g.yaw), sn = Math.sin(g.yaw);
+          const boxCol = theme.giftColors[gIdx % theme.giftColors.length];
+          const ribCol = theme.ribbonColors[1] || '#fff4d8';
+          const order = 0.20 + gIdx * 0.03;
+
+          const pushBoxPt = (lx, ly, lz, col, sz, al, shape = 0) => {
+            const wx = cx0 + lx * cs - lz * sn;
+            const wz = cz0 + lx * sn + lz * cs;
+            const wy = cy0 + ly;
+            const [sx, sy, sz0] = randomSpherePoint(200, 520);
+            pushPt(wx, wy, wz, sx, sy + 90, sz0, col, sz, al, gIdx + lx * 0.1, 2.0, 0, 0, shape, order);
+          };
+
+          const hw = g.w * 0.5, hh = g.h * 0.5, hd = g.d * 0.5;
+          // Crisp edges (12 box edges)
+          const corners = [
+            [-hw,-hh,-hd],[hw,-hh,-hd],[hw,hh,-hd],[-hw,hh,-hd],
+            [-hw,-hh, hd],[hw,-hh, hd],[hw,hh, hd],[-hw,hh, hd]
+          ];
+          const edgeIdx = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+          edgeIdx.forEach(([a, b]) => {
+            const pA = corners[a], pB = corners[b];
+            for (let k = 0; k <= 10; k++) {
+              const t = k / 10;
+              pushBoxPt(pA[0]+(pB[0]-pA[0])*t, pA[1]+(pB[1]-pA[1])*t, pA[2]+(pB[2]-pA[2])*t, boxCol, 4.9, 0.84);
+            }
+          });
+          // Soft translucent face stippling
+          for (let i = 0; i < 150; i++) {
+            const face = i % 5;
+            let lx = rand(-hw, hw), ly = rand(-hh, hh), lz = rand(-hd, hd);
+            if (face === 0) ly = -hh;
+            else if (face === 1) lz = hd;
+            else if (face === 2) lz = -hd;
+            else if (face === 3) lx = hw;
+            else lx = -hw;
+            pushBoxPt(lx, ly, lz, boxCol, rand(4.0, 6.2), rand(0.42, 0.72));
+          }
+          // Crossed satin ribbon bands on top + 4 vertical sides
+          for (let k = 0; k <= 18; k++) {
+            const t = (k / 18) * 2 - 1;
+            pushBoxPt(t * hw, -hh - 0.6, 0, ribCol, 5.2, 0.94);
+            pushBoxPt(0, -hh - 0.6, t * hd, ribCol, 5.2, 0.94);
+          }
+          for (let k = 0; k <= 13; k++) {
+            const ly = ((k / 13) * 2 - 1) * hh;
+            pushBoxPt(0, ly, hd + 0.5, ribCol, 4.8, 0.88);
+            pushBoxPt(0, ly, -hd - 0.5, ribCol, 4.8, 0.88);
+            pushBoxPt(hw + 0.5, ly, 0, ribCol, 4.8, 0.88);
+            pushBoxPt(-hw - 0.5, ly, 0, ribCol, 4.8, 0.88);
+          }
+          // 3D double-loop bow on top
+          for (let k = 0; k < 30; k++) {
+            const t = (k / 30) * Math.PI * 2;
+            const bx = Math.sin(t) * 10.5;
+            const by = -hh - 2.6 - Math.abs(Math.sin(t)) * 5.6;
+            const bz = Math.sin(2 * t) * 4.5;
+            pushBoxPt(bx, by, bz, ribCol, 5.0, 0.94);
+          }
+          // Warm inner core glow
+          pushBoxPt(0, 0, 0, boxCol, 34, 0.30, 2);
+        });
 
         // 7. Wide Milky Way Spiral Galaxy Base (5,200 particles)
         const rings = [
@@ -1742,45 +1927,195 @@
 
       // ==================== Polaroid Photo Frames & Click Bursts ====================
       let photoFrames = [];
+      let activePhotoIdx = 0;
       let bursts = [];
+
+      const DEFAULT_PHOTO_CARDS = [
+        { caption: 'Starlight Over Winter', kind: 'tree', bg: ['#191028', '#301438'], accent: '#ffd88a' },
+        { caption: 'Midnight Fireworks', kind: 'fireworks', bg: ['#0e1830', '#24143a'], accent: '#ff94c8' },
+        { caption: 'Beneath the Same Sky', kind: 'moon', bg: ['#0d1e32', '#1d2d4a'], accent: '#ffe6a8' },
+        { caption: 'Warmth in December', kind: 'heart', bg: ['#280e24', '#461638'], accent: '#ff8cc8' },
+        { caption: 'Golden Milky Way', kind: 'galaxy', bg: ['#1c140c', '#362114'], accent: '#ffd479' },
+        { caption: 'Forever & Always', kind: 'snow', bg: ['#0a2028', '#143440'], accent: '#9effd8' }
+      ];
+
+      function renderArtCardUrl(spec, idx) {
+        const c = document.createElement('canvas');
+        c.width = 280; c.height = 280;
+        const ctx = c.getContext('2d');
+        const g = ctx.createLinearGradient(0, 0, 0, 280);
+        g.addColorStop(0, spec.bg[0]);
+        g.addColorStop(1, spec.bg[1]);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 280, 280);
+
+        // Soft ambient glow
+        const rg = ctx.createRadialGradient(140, 128, 8, 140, 128, 120);
+        rg.addColorStop(0, hexToRgba(spec.accent, 0.36));
+        rg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = rg;
+        ctx.fillRect(0, 0, 280, 280);
+
+        // Starfield dots
+        for (let i = 0; i < 42; i++) {
+          const sx = ((i * 73 + idx * 41) % 260) + 10;
+          const sy = ((i * 53 + idx * 29) % 190) + 10;
+          const sr = (i % 4 === 0) ? 1.8 : 0.9;
+          ctx.fillStyle = `rgba(255,255,255,${0.35 + (i % 5) * 0.12})`;
+          ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+        }
+
+        ctx.save();
+        if (spec.kind === 'tree') {
+          for (let y = 0; y < 130; y += 4) {
+            const w = (y / 130) * 56;
+            for (let x = -w; x <= w; x += 6) {
+              ctx.fillStyle = hexToRgba(spec.accent, 0.55 + Math.random() * 0.4);
+              ctx.beginPath(); ctx.arc(140 + x + Math.sin(y) * 2, 72 + y, 1.5, 0, Math.PI * 2); ctx.fill();
+            }
+          }
+          ctx.fillStyle = '#fff9e6';
+          ctx.beginPath(); ctx.arc(140, 62, 5, 0, Math.PI * 2); ctx.fill();
+        } else if (spec.kind === 'fireworks') {
+          for (let f = 0; f < 2; f++) {
+            const fx = f === 0 ? 96 : 186, fy = f === 0 ? 112 : 94;
+            for (let a = 0; a < 22; a++) {
+              const ang = (a / 22) * Math.PI * 2;
+              const len = 34 + (a % 3) * 10;
+              ctx.strokeStyle = hexToRgba(spec.accent, 0.8);
+              ctx.lineWidth = 1.6;
+              ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + Math.cos(ang) * len, fy + Math.sin(ang) * len); ctx.stroke();
+            }
+          }
+        } else if (spec.kind === 'moon') {
+          ctx.fillStyle = '#fff3d6';
+          ctx.beginPath(); ctx.arc(140, 118, 34, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = spec.bg[0];
+          ctx.beginPath(); ctx.arc(154, 110, 30, 0, Math.PI * 2); ctx.fill();
+        } else if (spec.kind === 'heart') {
+          ctx.strokeStyle = spec.accent;
+          ctx.lineWidth = 2.4;
+          ctx.beginPath();
+          for (let i = 0; i <= 60; i++) {
+            const t = (i / 60) * Math.PI * 2;
+            const hx = 140 + 16 * Math.pow(Math.sin(t), 3) * 3.2;
+            const hy = 128 - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * 3.2;
+            if (i === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+          }
+          ctx.stroke();
+        } else if (spec.kind === 'galaxy') {
+          for (let r = 20; r <= 78; r += 16) {
+            ctx.strokeStyle = hexToRgba(spec.accent, 0.55);
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.ellipse(140, 140, r, r * 0.42, -0.22, 0, Math.PI * 2); ctx.stroke();
+          }
+        } else {
+          for (let i = 0; i < 6; i++) {
+            const ang = (i / 6) * Math.PI * 2;
+            ctx.strokeStyle = spec.accent;
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(140 + Math.cos(ang) * 44, 130 + Math.sin(ang) * 44); ctx.stroke();
+          }
+        }
+        ctx.restore();
+
+        // Horizon silhouette
+        ctx.fillStyle = 'rgba(4, 6, 14, 0.55)';
+        ctx.fillRect(0, 232, 280, 48);
+        return c.toDataURL('image/jpeg', 0.88);
+      }
+
+      function setPolaroidItems(items) {
+        photoFrames = [];
+        const list = items.slice(0, 18);
+        list.forEach((item, idx) => {
+          const img = new Image();
+          img.src = item.url;
+          const total = list.length;
+          const hNorm = 0.25 + (idx / Math.max(1, total - 1)) * 0.60;
+          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
+          const r = hNorm * TREE_RADIUS * 1.12 + 20;
+          const angle = idx * 2.39996 + 0.4;
+          const [sx, sy, sz] = randomSpherePoint(190, 360);
+          photoFrames.push({
+            img,
+            url: item.url,
+            caption: item.caption || 'Winter Memories ♥',
+            tx: Math.cos(angle) * r, ty: y, tz: Math.sin(angle) * r,
+            sx, sy, sz,
+            tilt: rand(-0.12, 0.12),
+            screenRect: null
+          });
+        });
+        document.getElementById('btnPhotos').classList.toggle('active', photoFrames.length > 0);
+      }
+
+      function loadDefaultPolaroids(announce = false) {
+        const cards = DEFAULT_PHOTO_CARDS.map((spec, i) => ({
+          url: renderArtCardUrl(spec, i),
+          caption: spec.caption
+        }));
+        setPolaroidItems(cards);
+        if (announce) showToast('Loaded 6 starlight Polaroid keepsakes');
+      }
 
       function layoutPhotoFrames(files) {
         const list = Array.from(files).slice(0, 18);
         if (!list.length) return;
-        photoFrames = [];
-        list.forEach((file, idx) => {
-          const url = URL.createObjectURL(file);
-          const img = new Image();
-          img.src = url;
-          const total = list.length;
-          const hNorm = 0.24 + (idx / Math.max(1, total - 1)) * 0.64;
-          const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * 1.12 + 14;
-          const angle = idx * 2.39996;
-          const [sx, sy, sz] = randomSpherePoint(190, 360);
-          photoFrames.push({
-            img, url,
-            tx: Math.cos(angle) * r, ty: y, tz: Math.sin(angle) * r,
-            sx, sy, sz,
-            tilt: rand(-0.14, 0.14),
-            screenRect: null
-          });
-        });
-        document.getElementById('btnPhotos').classList.add('active');
+        const items = list.map((file, i) => ({
+          url: URL.createObjectURL(file),
+          caption: file.name ? file.name.replace(/\.[^.]+$/, '') : `Memory #${i + 1}`
+        }));
+        setPolaroidItems(items);
         showToast(`Hung ${list.length} Polaroid photos on the tree! Tap any photo to zoom.`, 3400);
       }
 
       const photoModal = document.getElementById('photoModal');
       const modalImg = document.getElementById('modalImg');
       const modalCaption = document.getElementById('modalCaption');
+      const modalCounter = document.getElementById('modalCounter');
+
+      function showPhotoAt(index) {
+        if (!photoFrames.length) return;
+        activePhotoIdx = (index + photoFrames.length) % photoFrames.length;
+        const frame = photoFrames[activePhotoIdx];
+        modalImg.src = frame.url;
+        modalCaption.textContent = frame.caption || 'Winter Memories ♥';
+        modalCounter.textContent = `${activePhotoIdx + 1} / ${photoFrames.length}`;
+      }
 
       function openPhotoModal(frame) {
         if (!frame || !frame.url) return;
-        modalImg.src = frame.url;
-        modalCaption.textContent = 'Winter Memories ♥';
+        const idx = photoFrames.indexOf(frame);
+        showPhotoAt(idx >= 0 ? idx : 0);
         photoModal.classList.add('show');
       }
+
+      document.getElementById('modalPrev').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPhotoAt(activePhotoIdx - 1);
+      });
+      document.getElementById('modalNext').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPhotoAt(activePhotoIdx + 1);
+      });
+      document.getElementById('modalCloseBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        photoModal.classList.remove('show');
+      });
+      document.getElementById('modalUploadBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        photoInput.click();
+      });
+      document.getElementById('polaroidStage').addEventListener('click', (e) => e.stopPropagation());
       photoModal.addEventListener('click', () => photoModal.classList.remove('show'));
+
+      let modalTouchX = 0;
+      photoModal.addEventListener('touchstart', (e) => { modalTouchX = e.touches[0]?.clientX || 0; }, { passive: true });
+      photoModal.addEventListener('touchend', (e) => {
+        const dx = (e.changedTouches[0]?.clientX || 0) - modalTouchX;
+        if (Math.abs(dx) > 42) showPhotoAt(activePhotoIdx + (dx < 0 ? 1 : -1));
+      });
 
       function spawnBurst(screenX, screenY) {
         const theme = THEMES[currentThemeKey];
@@ -1942,22 +2277,42 @@
           ovCtx.globalCompositeOperation = 'source-over';
           for (let i = 0; i < projectedFrames.length; i++) {
             const { pf, p } = projectedFrames[i];
-            const cardW = (34 + state.scatter * 18) * p.scale;
-            const cardH = cardW * 1.2;
-            const pad = cardW * 0.09;
+            const cardW = (32 + state.scatter * 16) * p.scale;
+            const cardH = cardW * 1.22;
+            const pad = cardW * 0.085;
+            const depthFade = p.depth > camDist + 35 ? 0.42 : (p.depth > camDist - 10 ? 0.72 : 0.96);
             pf.screenRect = { x: p.sx - cardW * 0.5, y: p.sy - cardH * 0.5, w: cardW, h: cardH };
 
             ovCtx.save();
             ovCtx.translate(p.sx, p.sy);
-            ovCtx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.04);
-            ovCtx.globalAlpha = 0.96 * fade;
-            ovCtx.shadowColor = hexToRgba(theme.accent, 0.55);
-            ovCtx.shadowBlur = 12 * p.scale;
+            ovCtx.rotate(pf.tilt + Math.sin(state.time * 1.4 + i) * 0.045);
+            ovCtx.globalAlpha = depthFade * fade;
+
+            // Delicate hanging string & glowing clasp pin (hidden during nebula scatter)
+            if (state.scatter < 0.4) {
+              const cordAlpha = (1 - state.scatter / 0.4) * depthFade * fade;
+              ovCtx.save();
+              ovCtx.globalAlpha = cordAlpha * 0.8;
+              ovCtx.strokeStyle = theme.accent;
+              ovCtx.lineWidth = Math.max(0.8, 1.1 * p.scale);
+              ovCtx.beginPath();
+              ovCtx.moveTo(0, -cardH * 0.5);
+              ovCtx.lineTo(0, -cardH * 0.5 - 9 * p.scale);
+              ovCtx.stroke();
+              ovCtx.fillStyle = '#fff8e6';
+              ovCtx.beginPath();
+              ovCtx.arc(0, -cardH * 0.5 - 9 * p.scale, Math.max(1.5, 2.1 * p.scale), 0, Math.PI * 2);
+              ovCtx.fill();
+              ovCtx.restore();
+            }
+
+            ovCtx.shadowColor = hexToRgba(theme.accent, 0.48);
+            ovCtx.shadowBlur = 10 * p.scale;
             ovCtx.fillStyle = '#fcfaf5';
             ovCtx.fillRect(-cardW * 0.5, -cardH * 0.5, cardW, cardH);
             ovCtx.shadowBlur = 0;
             const imgW = cardW - pad * 2;
-            const imgH = cardH - pad * 3.1;
+            const imgH = cardH - pad * 3.2;
             ovCtx.drawImage(pf.img, -imgW * 0.5, -cardH * 0.5 + pad, imgW, imgH);
             ovCtx.restore();
           }
@@ -2114,6 +2469,10 @@
 
       window.addEventListener('keydown', (e) => {
         if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+        if (photoModal.classList.contains('show')) {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); showPhotoAt(activePhotoIdx - 1); return; }
+          if (e.key === 'ArrowRight') { e.preventDefault(); showPhotoAt(activePhotoIdx + 1); return; }
+        }
         if (e.code === 'Space') { e.preventDefault(); toggleScatter(); }
         else if (e.key === 'h' || e.key === 'H') toggleZenMode();
         else if (e.key === 'Escape') photoModal.classList.remove('show');
@@ -2185,6 +2544,7 @@
       const photoInput = document.getElementById('photoInput');
       document.getElementById('btnPhotos').addEventListener('click', () => photoInput.click());
       document.getElementById('btnUploadPhotos').addEventListener('click', () => photoInput.click());
+      document.getElementById('btnDefaultPhotos').addEventListener('click', () => loadDefaultPolaroids(true));
       photoInput.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length > 0) {
           layoutPhotoFrames(e.target.files);
@@ -2205,6 +2565,10 @@
         btnTogglePanel.classList.toggle('active', !isHidden);
       });
       document.getElementById('mobReplay').addEventListener('click', () => document.getElementById('btnReplay').click());
+      document.getElementById('mobPhotos').addEventListener('click', () => {
+        if (photoFrames.length > 0) openPhotoModal(photoFrames[0]);
+        else photoInput.click();
+      });
       document.getElementById('mobMusic').addEventListener('click', () => document.getElementById('btnMusic').click());
       document.getElementById('mobGesture').addEventListener('click', () => document.getElementById('btnGesture').click());
 
@@ -2418,6 +2782,7 @@
 
       window.addEventListener('resize', resize);
       resize();
+      loadDefaultPolaroids(false);
       setTopper(topperMode);
       applyTheme(currentThemeKey);
       startOpeningAnimation();
