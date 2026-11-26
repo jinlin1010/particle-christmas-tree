@@ -570,7 +570,7 @@
       .controls-wrap { top: max(22px, env(safe-area-inset-top)); right: 16px; }
       .toolbar-btns .mob-secondary { display: none; }
       .mobile-quick-actions { display: block; }
-      .greeting-overlay { bottom: 6.8%; }
+      .greeting-overlay { bottom: 7.8%; }
       .panel { width: calc(100vw - 32px); max-width: 310px; }
       .gesture-box { width: 124px; }
     }
@@ -1590,7 +1590,8 @@
       function detonateShell(shell) {
         const { x, y, palette, shellType, layer, depthScale } = shell;
         const baseScale = (Math.min(state.width, state.height) / 690) * depthScale;
-        const alphaMul = layer === 'front' ? 0.94 : (0.76 + 0.18 * Math.min(1, depthScale));
+        const isMob = state.width < state.height;
+        const alphaMul = layer === 'front' ? 0.94 : (isMob ? 0.88 : (0.76 + 0.18 * Math.min(1, depthScale)));
 
         fwFlashes.push({ x, y, life: 1.0, radius: 130 * baseScale, color: palette.glow, layer, alphaMul });
         fwActiveBursts.push({ x, y, life: 2.3 });
@@ -2138,18 +2139,24 @@
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
           const r = hNorm * TREE_RADIUS * 1.15 + 24;
           const angle = idx * 2.39996 + 0.4;
-          // Ordered gallery ring in scatter/nebula mode so photos fan out cleanly like a galaxy of memories!
+          // Desktop wide orbital ring + Mobile portrait vertical helix so cards never overlap on 9:16 screens!
           const gAng = (idx / Math.max(1, total)) * Math.PI * 2;
           const gRad = 265 + (idx % 2) * 42;
           const sx = Math.cos(gAng) * gRad;
           const sy = Math.sin(idx * 2.05) * 90 - 25;
           const sz = Math.sin(gAng) * gRad;
+          const mAng = idx * 2.15 + 0.4;
+          const mRad = 128 + (idx % 2) * 24;
+          const msx = Math.cos(mAng) * mRad;
+          const msy = -175 + (idx / Math.max(1, total - 1)) * 315;
+          const msz = Math.sin(mAng) * mRad;
           photoFrames.push({
             img,
             url: item.url,
             caption: item.caption || 'Winter Memories ♥',
             tx: Math.cos(angle) * r, ty: y, tz: Math.sin(angle) * r,
             sx, sy, sz,
+            msx, msy, msz,
             tilt: rand(-0.09, 0.09),
             screenRect: null,
             depth: 9999
@@ -2357,10 +2364,10 @@
         const introCamFrac = Math.min(1, state.introProgress / 1.05);
         const introEase = 1 - Math.pow(1 - introCamFrac, 3);
         const introZoom = state.introDone ? 1.0 : (0.87 + 0.13 * introEase);
-        const fov = (isPortrait ? w * 0.85 : minDim * 0.75) * state.zoom * introZoom;
+        const fov = (isPortrait ? w * 0.90 : minDim * 0.75) * state.zoom * introZoom;
         const camDist = 665;
         const cx = w * 0.5;
-        const cy = h * (isPortrait ? 0.462 : 0.382);
+        const cy = h * (isPortrait ? 0.478 : 0.382);
 
         if (!state.introDone) {
           state.introProgress += dt * 0.34;
@@ -2481,9 +2488,12 @@
           for (let i = 0; i < photoFrames.length; i++) {
             const pf = photoFrames[i];
             if (!pf.img.complete || pf.img.naturalWidth === 0) { pf.screenRect = null; continue; }
-            let px = pf.tx + (pf.sx - pf.tx) * state.scatter;
-            let py = pf.ty + (pf.sy - pf.ty) * state.scatter + Math.sin(state.time * 1.6 + i * 1.1) * 2.8;
-            let pz = pf.tz + (pf.sz - pf.tz) * state.scatter;
+            const targetSX = isPortrait ? pf.msx : pf.sx;
+            const targetSY = isPortrait ? pf.msy : pf.sy;
+            const targetSZ = isPortrait ? pf.msz : pf.sz;
+            let px = pf.tx + (targetSX - pf.tx) * state.scatter;
+            let py = pf.ty + (targetSY - pf.ty) * state.scatter + Math.sin(state.time * 1.6 + i * 1.1) * 2.8;
+            let pz = pf.tz + (targetSZ - pf.tz) * state.scatter;
             if (state.scatter > 0.01) {
               const nx = px * swCos - pz * swSin;
               const nz = px * swSin + pz * swCos;
