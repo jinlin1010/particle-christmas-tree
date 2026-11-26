@@ -1486,20 +1486,20 @@
         return fwBag.pop();
       }
 
-      // 6 well-separated desktop sky zones & 4 mobile sky zones to prevent overlap or edge clipping
+      // 6 well-separated desktop sky zones & 4 mobile sky zones (includes mid-foreground flank bursts for 3D depth)
       const SKY_ZONES = [
-        { xN: 0.14, yN: 0.34, layer: 'front', cooldown: 0 },
-        { xN: 0.25, yN: 0.19, layer: 'back',  cooldown: 0 },
-        { xN: 0.35, yN: 0.14, layer: 'back',  cooldown: 0 },
-        { xN: 0.65, yN: 0.15, layer: 'back',  cooldown: 0 },
-        { xN: 0.76, yN: 0.23, layer: 'back',  cooldown: 0 },
-        { xN: 0.86, yN: 0.36, layer: 'front', cooldown: 0 }
+        { xN: 0.16, yN: 0.34, layer: 'front', cooldown: 0 },
+        { xN: 0.27, yN: 0.28, layer: 'front', cooldown: 0 },
+        { xN: 0.25, yN: 0.17, layer: 'back',  cooldown: 0 },
+        { xN: 0.66, yN: 0.16, layer: 'back',  cooldown: 0 },
+        { xN: 0.74, yN: 0.29, layer: 'front', cooldown: 0 },
+        { xN: 0.85, yN: 0.35, layer: 'front', cooldown: 0 }
       ];
       const MOB_ZONES = [
-        { xN: 0.21, yN: 0.22, layer: 'back', cooldown: 0 },
-        { xN: 0.79, yN: 0.20, layer: 'back', cooldown: 0 },
-        { xN: 0.24, yN: 0.13, layer: 'back', cooldown: 0 },
-        { xN: 0.76, yN: 0.13, layer: 'back', cooldown: 0 }
+        { xN: 0.22, yN: 0.28, layer: 'front', cooldown: 0 },
+        { xN: 0.78, yN: 0.27, layer: 'front', cooldown: 0 },
+        { xN: 0.23, yN: 0.14, layer: 'back',  cooldown: 0 },
+        { xN: 0.77, yN: 0.14, layer: 'back',  cooldown: 0 }
       ];
 
       function pickNonOverlappingZone(w, h, isPortrait) {
@@ -1507,7 +1507,7 @@
         const maxConcurrent = isPortrait ? 2 : 3;
         if (fwShells.length + fwActiveBursts.length >= maxConcurrent) return null;
 
-        const minDist = isPortrait ? w * 0.44 : Math.min(w, h) * 0.36;
+        const minDist = isPortrait ? w * 0.42 : Math.min(w, h) * 0.35;
         const candidates = [];
         for (let idx = 0; idx < zones.length; idx++) {
           if (zones[idx].cooldown > 0) continue;
@@ -1530,7 +1530,7 @@
         return pick(candidates);
       }
 
-      function launchFirework(xScreenNorm, yScreenNorm, forcedType) {
+      function launchFirework(xScreenNorm, yScreenNorm, forcedType, forcedLayer) {
         if (!state.fireworksEnabled) return;
         const w = state.width, h = state.height;
         const isPortrait = w < h;
@@ -1539,19 +1539,19 @@
         if (xScreenNorm !== undefined) {
           tx = xScreenNorm * w;
           ty = yScreenNorm * h;
-          layer = 'back';
+          layer = forcedLayer || 'back';
         } else {
           const picked = pickNonOverlappingZone(w, h, isPortrait);
           if (!picked) return;
           tx = picked.cx;
           ty = picked.cy;
           layer = picked.layer;
-          picked.zones[picked.idx].cooldown = 5.2;
+          picked.zones[picked.idx].cooldown = layer === 'front' ? 6.2 : 4.8;
         }
 
         const depthScale = isPortrait
-          ? rand(0.68, 0.84)
-          : (layer === 'front' ? rand(0.96, 1.14) : rand(0.76, 1.04));
+          ? (layer === 'front' ? rand(0.90, 1.06) : rand(0.66, 0.82))
+          : (layer === 'front' ? rand(1.22, 1.38) : rand(0.76, 1.02));
         const startX = tx + rand(-55, 55);
         const startY = h * 0.92;
         const flightTime = rand(0.58, 0.72);
@@ -2283,7 +2283,7 @@
           const total = list.length;
           const hNorm = 0.24 + (idx / Math.max(1, total - 1)) * 0.58;
           const y = TREE_TOP_Y + hNorm * TREE_HEIGHT;
-          const r = hNorm * TREE_RADIUS * 1.15 + 24;
+          const r = hNorm * TREE_RADIUS * 1.04 + 6;
           const angle = idx * 2.39996 + 0.4;
           // Foreground Surge positions in Chaos/Scatter mode (wide organic constellation, zero grid look!)
           const spreadCols = [-420, -210, 15, 225, 425, -320, -110, 130, 340];
@@ -2522,12 +2522,12 @@
           }
           if (state.introProgress >= 1.02 && state.fireworksEnabled && fwShells.length === 0 && fwSparks.length === 0) {
             if (isPortrait) {
-              launchFirework(0.20, 0.21, nextRandomFwType());
-              launchFirework(0.80, 0.17, nextRandomFwType());
+              launchFirework(0.22, 0.27, nextRandomFwType(), 'front');
+              launchFirework(0.78, 0.16, nextRandomFwType(), 'back');
             } else {
-              launchFirework(0.14, 0.32, nextRandomFwType());
-              launchFirework(0.32, 0.16, nextRandomFwType());
-              launchFirework(0.83, 0.24, nextRandomFwType());
+              launchFirework(0.17, 0.31, nextRandomFwType(), 'front');
+              launchFirework(0.35, 0.15, nextRandomFwType(), 'back');
+              launchFirework(0.81, 0.25, nextRandomFwType(), 'back');
             }
           }
           if (state.introProgress >= 1.38) {
@@ -2663,48 +2663,39 @@
             const isHovered = hoverPhoto === pf;
 
             if (sFrac < 0.24) {
-              // TREE MODE: Pure additive stardust star-cluster nodes (100% particle aesthetic, zero flat 2D stickers!)
-              const orbVis = isHovered ? 1.0 : (p.depth > camDist + 14 ? 0.0 : (p.depth > camDist - 12 ? 0.55 : 0.94));
+              // TREE MODE: Ultra-delicate glowing stardust pearl motes tucked naturally into the tree garland
+              const orbVis = isHovered ? 1.0 : (p.depth > camDist + 12 ? 0.0 : (p.depth > camDist - 12 ? 0.48 : 0.88));
               if (orbVis <= 0.02) { pf.screenRect = null; continue; }
 
-              const rStar = 8.5 * p.scale * (isHovered ? 1.38 : 1.0) * (0.4 + 0.6 * bellFade);
-              const hitR = Math.max(15, rStar * 2.0);
+              const rDot = 4.6 * p.scale * (isHovered ? 1.55 : 1.0) * (0.4 + 0.6 * bellFade);
+              const hitR = Math.max(14, rDot * 3.0);
               pf.screenRect = { x: p.sx - hitR, y: p.sy - hitR, w: hitR * 2, h: hitR * 2 };
 
               const orbCol = theme.giftColors[idx % theme.giftColors.length];
-              const pulse = 0.78 + 0.22 * Math.sin(state.time * 3.0 + idx * 1.4);
+              const pulse = 0.72 + 0.28 * Math.sin(state.time * 2.6 + idx * 1.7);
               ovCtx.save();
               ovCtx.globalCompositeOperation = 'lighter';
               ovCtx.translate(p.sx, p.sy);
               ovCtx.globalAlpha = orbVis * bellFade * fade * pulse;
 
-              // Soft stardust aura
-              const halo = ovCtx.createRadialGradient(0, 0, 0.5, 0, 0, rStar * 2.2);
-              halo.addColorStop(0, `rgba(255, 252, 244, ${isHovered ? 0.95 : 0.72})`);
-              halo.addColorStop(0.28, hexToRgba(orbCol, isHovered ? 0.85 : 0.52));
+              // Warm soft stardust core + gentle atmospheric bloom (same optical curve as WebGL points)
+              const halo = ovCtx.createRadialGradient(0, 0, 0.2, 0, 0, rDot * 2.6);
+              halo.addColorStop(0, '#ffffff');
+              halo.addColorStop(0.22, hexToRgba('#fff4d8', isHovered ? 0.92 : 0.72));
+              halo.addColorStop(0.50, hexToRgba(orbCol, isHovered ? 0.65 : 0.34));
               halo.addColorStop(1, 'rgba(0,0,0,0)');
               ovCtx.fillStyle = halo;
-              ovCtx.beginPath(); ovCtx.arc(0, 0, rStar * 2.2, 0, Math.PI * 2); ovCtx.fill();
+              ovCtx.beginPath(); ovCtx.arc(0, 0, rDot * 2.6, 0, Math.PI * 2); ovCtx.fill();
 
-              // Crisp 4-point diffraction star glint (pure stardust look)
-              const rayL = rStar * (isHovered ? 1.85 : 1.35);
-              ovCtx.strokeStyle = 'rgba(255, 250, 238, 0.88)';
-              ovCtx.lineWidth = Math.max(0.8, 1.15 * p.scale);
-              ovCtx.lineCap = 'round';
-              ovCtx.beginPath();
-              ovCtx.moveTo(-rayL, 0); ovCtx.lineTo(rayL, 0);
-              ovCtx.moveTo(0, -rayL); ovCtx.lineTo(0, rayL);
-              ovCtx.stroke();
-
-              // Tiny orbiting stardust motes around the memory star
-              for (let m = 0; m < 5; m++) {
-                const ma = state.time * 1.4 + idx + (m / 5) * Math.PI * 2;
-                const mr = rStar * (0.68 + 0.24 * Math.sin(state.time * 2 + m));
+              // 3 tiny orbiting stardust firefly specks
+              for (let m = 0; m < 3; m++) {
+                const ma = state.time * 1.2 + idx * 1.1 + (m / 3) * Math.PI * 2;
+                const mr = rDot * (1.15 + 0.35 * Math.sin(state.time * 1.8 + m));
                 const mx = Math.cos(ma) * mr;
                 const my = Math.sin(ma) * mr * 0.75;
-                ovCtx.fillStyle = m % 2 === 0 ? '#ffffff' : orbCol;
+                ovCtx.fillStyle = m === 0 ? '#ffffff' : hexToRgba(orbCol, 0.85);
                 ovCtx.beginPath();
-                ovCtx.arc(mx, my, Math.max(0.9, 1.45 * p.scale), 0, Math.PI * 2);
+                ovCtx.arc(mx, my, Math.max(0.75, 1.05 * p.scale), 0, Math.PI * 2);
                 ovCtx.fill();
               }
               ovCtx.restore();
