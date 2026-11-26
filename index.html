@@ -2663,48 +2663,50 @@
             const isHovered = hoverPhoto === pf;
 
             if (sFrac < 0.24) {
-              // TREE MODE: Luxury glossy 3D metallic Christmas Bauble Ornaments (zero ugly cartoon stickers!)
-              const orbVis = isHovered ? 1.0 : (p.depth > camDist + 14 ? 0.0 : (p.depth > camDist - 12 ? 0.56 : 0.96));
+              // TREE MODE: Pure additive stardust star-cluster nodes (100% particle aesthetic, zero flat 2D stickers!)
+              const orbVis = isHovered ? 1.0 : (p.depth > camDist + 14 ? 0.0 : (p.depth > camDist - 12 ? 0.55 : 0.94));
               if (orbVis <= 0.02) { pf.screenRect = null; continue; }
 
-              const rOrb = 6.8 * p.scale * (isHovered ? 1.32 : 1.0) * (0.45 + 0.55 * bellFade);
-              const hitR = Math.max(14, rOrb * 2.1);
+              const rStar = 8.5 * p.scale * (isHovered ? 1.38 : 1.0) * (0.4 + 0.6 * bellFade);
+              const hitR = Math.max(15, rStar * 2.0);
               pf.screenRect = { x: p.sx - hitR, y: p.sy - hitR, w: hitR * 2, h: hitR * 2 };
 
               const orbCol = theme.giftColors[idx % theme.giftColors.length];
+              const pulse = 0.78 + 0.22 * Math.sin(state.time * 3.0 + idx * 1.4);
               ovCtx.save();
-              ovCtx.translate(p.sx, p.sy);
-              ovCtx.globalAlpha = orbVis * bellFade * fade;
-
-              // Fine golden hanging string
-              ovCtx.strokeStyle = theme.accent;
-              ovCtx.lineWidth = Math.max(0.75, 0.95 * p.scale);
-              ovCtx.beginPath();
-              ovCtx.moveTo(0, -rOrb);
-              ovCtx.lineTo(0, -rOrb - 7 * p.scale);
-              ovCtx.stroke();
-
-              // Soft ambient glow halo
               ovCtx.globalCompositeOperation = 'lighter';
-              const halo = ovCtx.createRadialGradient(0, 0, rOrb * 0.2, 0, 0, rOrb * 2.3);
-              halo.addColorStop(0, hexToRgba(orbCol, isHovered ? 0.72 : 0.42));
+              ovCtx.translate(p.sx, p.sy);
+              ovCtx.globalAlpha = orbVis * bellFade * fade * pulse;
+
+              // Soft stardust aura
+              const halo = ovCtx.createRadialGradient(0, 0, 0.5, 0, 0, rStar * 2.2);
+              halo.addColorStop(0, `rgba(255, 252, 244, ${isHovered ? 0.95 : 0.72})`);
+              halo.addColorStop(0.28, hexToRgba(orbCol, isHovered ? 0.85 : 0.52));
               halo.addColorStop(1, 'rgba(0,0,0,0)');
               ovCtx.fillStyle = halo;
-              ovCtx.beginPath(); ovCtx.arc(0, 0, rOrb * 2.3, 0, Math.PI * 2); ovCtx.fill();
+              ovCtx.beginPath(); ovCtx.arc(0, 0, rStar * 2.2, 0, Math.PI * 2); ovCtx.fill();
 
-              // Glossy 3D metallic sphere shading (highlight at upper-left + rich saturated body + dark lower-right rim)
-              ovCtx.globalCompositeOperation = 'source-over';
-              const sph = ovCtx.createRadialGradient(-rOrb * 0.34, -rOrb * 0.36, rOrb * 0.08, 0, 0, rOrb);
-              sph.addColorStop(0, '#ffffff');
-              sph.addColorStop(0.28, orbCol);
-              sph.addColorStop(0.82, shadeHex(orbCol, 0.55));
-              sph.addColorStop(1, shadeHex(orbCol, 0.32));
-              ovCtx.fillStyle = sph;
-              ovCtx.beginPath(); ovCtx.arc(0, 0, rOrb, 0, Math.PI * 2); ovCtx.fill();
+              // Crisp 4-point diffraction star glint (pure stardust look)
+              const rayL = rStar * (isHovered ? 1.85 : 1.35);
+              ovCtx.strokeStyle = 'rgba(255, 250, 238, 0.88)';
+              ovCtx.lineWidth = Math.max(0.8, 1.15 * p.scale);
+              ovCtx.lineCap = 'round';
+              ovCtx.beginPath();
+              ovCtx.moveTo(-rayL, 0); ovCtx.lineTo(rayL, 0);
+              ovCtx.moveTo(0, -rayL); ovCtx.lineTo(0, rayL);
+              ovCtx.stroke();
 
-              // Delicate metallic gold crown cap on top of bauble
-              ovCtx.fillStyle = '#f3d384';
-              ovCtx.fillRect(-rOrb * 0.28, -rOrb * 1.15, rOrb * 0.56, rOrb * 0.24);
+              // Tiny orbiting stardust motes around the memory star
+              for (let m = 0; m < 5; m++) {
+                const ma = state.time * 1.4 + idx + (m / 5) * Math.PI * 2;
+                const mr = rStar * (0.68 + 0.24 * Math.sin(state.time * 2 + m));
+                const mx = Math.cos(ma) * mr;
+                const my = Math.sin(ma) * mr * 0.75;
+                ovCtx.fillStyle = m % 2 === 0 ? '#ffffff' : orbCol;
+                ovCtx.beginPath();
+                ovCtx.arc(mx, my, Math.max(0.9, 1.45 * p.scale), 0, Math.PI * 2);
+                ovCtx.fill();
+              }
               ovCtx.restore();
             }
 
