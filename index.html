@@ -1319,112 +1319,80 @@
           pushPt(bx0, by, bz0, sx, sy, sz, '#fff8e8', 11.5, 0.85, b, 2.8, 0, 0, 1, 0.22 + (1.0 - hNorm) * 0.65);
         }
 
-        // 6c. 6 Sculpted 3D Luminous Gift Boxes around the Tree Base (dense filled faces, overhanging lid, satin bow)
+        // 6c. 5 Sculpted 3D Luminous Gift Boxes around the Tree Base (anchors the tree into the Milky Way)
         const giftSpecs = [
-          { ang: 0.28, rad: 168, w: 38, h: 28, d: 36, yaw: 0.44 },
-          { ang: 1.16, rad: 184, w: 30, h: 36, d: 30, yaw: -0.32 },
-          { ang: 2.18, rad: 172, w: 42, h: 24, d: 34, yaw: 0.72 },
-          { ang: 3.16, rad: 186, w: 34, h: 32, d: 34, yaw: -0.48 },
-          { ang: 4.24, rad: 168, w: 32, h: 26, d: 30, yaw: 0.34 },
-          { ang: 5.28, rad: 178, w: 36, h: 30, d: 34, yaw: -0.62 }
+          { ang: 0.35, rad: 156, w: 36, h: 30, d: 36, yaw: 0.42 },
+          { ang: 1.55, rad: 174, w: 32, h: 38, d: 32, yaw: -0.35 },
+          { ang: 2.82, rad: 162, w: 42, h: 26, d: 34, yaw: 0.78 },
+          { ang: 4.12, rad: 178, w: 34, h: 32, d: 34, yaw: -0.52 },
+          { ang: 5.26, rad: 152, w: 30, h: 26, d: 30, yaw: 0.28 }
         ];
         giftSpecs.forEach((g, gIdx) => {
           const cx0 = Math.cos(g.ang) * g.rad;
           const cz0 = Math.sin(g.ang) * g.rad;
-          const baseY = TREE_BASE_Y + 14;
+          const baseY = TREE_BASE_Y + 12;
           const cy0 = baseY - g.h * 0.5;
           const cs = Math.cos(g.yaw), sn = Math.sin(g.yaw);
           const boxCol = theme.giftColors[gIdx % theme.giftColors.length];
           const ribCol = theme.ribbonColors[1] || '#fff4d8';
-          const order = 0.20 + gIdx * 0.025;
+          const order = 0.20 + gIdx * 0.03;
 
           const pushBoxPt = (lx, ly, lz, col, sz, al, shape = 0) => {
             const wx = cx0 + lx * cs - lz * sn;
             const wz = cz0 + lx * sn + lz * cs;
             const wy = cy0 + ly;
             const [sx, sy, sz0] = randomSpherePoint(200, 520);
-            pushPt(wx, wy, wz, sx, sy + 90, sz0, col, sz, al, gIdx + lx * 0.1, 1.8, 0, 0, shape, order);
+            pushPt(wx, wy, wz, sx, sy + 90, sz0, col, sz, al, gIdx + lx * 0.1, 2.0, 0, 0, shape, order);
           };
 
           const hw = g.w * 0.5, hh = g.h * 0.5, hd = g.d * 0.5;
-          const lidH = 6.5, lidOver = 2.0;
-
-          // Structured dense face grid (so boxes read as solid glowing presents, never hollow wireframes)
-          const step = 4.2;
-          // Front & Back faces (+Z / -Z)
-          for (let x = -hw; x <= hw; x += step) {
-            for (let y = -hh + 1.5; y <= hh; y += step) {
-              pushBoxPt(x, y,  hd, boxCol, 4.6, 0.50);
-              pushBoxPt(x, y, -hd, boxCol, 4.6, 0.44);
-            }
-          }
-          // Left & Right faces (+X / -X)
-          for (let z = -hd + step * 0.5; z <= hd - step * 0.5; z += step) {
-            for (let y = -hh + 1.5; y <= hh; y += step) {
-              pushBoxPt( hw, y, z, boxCol, 4.6, 0.48);
-              pushBoxPt(-hw, y, z, boxCol, 4.6, 0.48);
-            }
-          }
-          // Overhanging lid top & rim seam
-          for (let x = -(hw + lidOver); x <= hw + lidOver; x += step) {
-            for (let z = -(hd + lidOver); z <= hd + lidOver; z += step) {
-              pushBoxPt(x, -hh, z, boxCol, 4.8, 0.58);
-            }
-          }
-          // Bright crisp lid perimeter & vertical corner edges
-          for (let k = 0; k <= 12; k++) {
-            const t = (k / 12) * 2 - 1;
-            const lw = hw + lidOver, ld = hd + lidOver;
-            pushBoxPt(t * lw, -hh,  ld, boxCol, 4.8, 0.85);
-            pushBoxPt(t * lw, -hh, -ld, boxCol, 4.8, 0.85);
-            pushBoxPt( lw, -hh, t * ld, boxCol, 4.8, 0.85);
-            pushBoxPt(-lw, -hh, t * ld, boxCol, 4.8, 0.85);
-            pushBoxPt(t * lw, -hh + lidH,  ld, boxCol, 4.0, 0.58);
-            pushBoxPt(t * lw, -hh + lidH, -ld, boxCol, 4.0, 0.58);
-            pushBoxPt( lw, -hh + lidH, t * ld, boxCol, 4.0, 0.58);
-            pushBoxPt(-lw, -hh + lidH, t * ld, boxCol, 4.0, 0.58);
-          }
-          [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].forEach(([cx, cz]) => {
-            for (let k = 0; k <= 9; k++) {
-              pushBoxPt(cx, -hh + (k / 9) * g.h, cz, boxCol, 4.6, 0.72);
+          // Crisp edges (12 box edges)
+          const corners = [
+            [-hw,-hh,-hd],[hw,-hh,-hd],[hw,hh,-hd],[-hw,hh,-hd],
+            [-hw,-hh, hd],[hw,-hh, hd],[hw,hh, hd],[-hw,hh, hd]
+          ];
+          const edgeIdx = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+          edgeIdx.forEach(([a, b]) => {
+            const pA = corners[a], pB = corners[b];
+            for (let k = 0; k <= 10; k++) {
+              const t = k / 10;
+              pushBoxPt(pA[0]+(pB[0]-pA[0])*t, pA[1]+(pB[1]-pA[1])*t, pA[2]+(pB[2]-pA[2])*t, boxCol, 4.9, 0.84);
             }
           });
-
-          // Wide satin ribbon bands across lid + all 4 sides
-          for (let off = -1.6; off <= 1.6; off += 1.6) {
-            for (let k = 0; k <= 16; k++) {
-              const t = (k / 16) * 2 - 1;
-              pushBoxPt(t * (hw + lidOver), -hh - 0.8, off, ribCol, 4.8, 0.86);
-              pushBoxPt(off, -hh - 0.8, t * (hd + lidOver), ribCol, 4.8, 0.86);
-            }
-            for (let k = 0; k <= 10; k++) {
-              const ly = ((k / 10) * 2 - 1) * hh;
-              pushBoxPt(off, ly,  hd + 0.7, ribCol, 4.4, 0.80);
-              pushBoxPt(off, ly, -hd - 0.7, ribCol, 4.4, 0.80);
-              pushBoxPt( hw + 0.7, ly, off, ribCol, 4.4, 0.80);
-              pushBoxPt(-hw - 0.7, ly, off, ribCol, 4.4, 0.80);
-            }
+          // Soft translucent face stippling
+          for (let i = 0; i < 150; i++) {
+            const face = i % 5;
+            let lx = rand(-hw, hw), ly = rand(-hh, hh), lz = rand(-hd, hd);
+            if (face === 0) ly = -hh;
+            else if (face === 1) lz = hd;
+            else if (face === 2) lz = -hd;
+            else if (face === 3) lx = hw;
+            else lx = -hw;
+            pushBoxPt(lx, ly, lz, boxCol, rand(4.0, 6.2), rand(0.42, 0.72));
           }
-
-          // Sculpted 4-loop 3D gift bow on top + sparkling center knot
-          for (let loop = 0; loop < 4; loop++) {
-            const baseA = (loop * Math.PI) / 2 + Math.PI / 4;
-            const cA = Math.cos(baseA), sA = Math.sin(baseA);
-            for (let k = 0; k <= 14; k++) {
-              const u = (k / 14) * Math.PI;
-              const rad = Math.sin(u) * 10.5;
-              const hLift = Math.sin(u) * 7.2;
-              const spread = Math.cos(u) * 2.2;
-              pushBoxPt(
-                rad * cA - spread * sA,
-                -hh - 1.4 - hLift,
-                rad * sA + spread * cA,
-                ribCol, 4.8, 0.92
-              );
-            }
+          // Crossed satin ribbon bands on top + 4 vertical sides
+          for (let k = 0; k <= 18; k++) {
+            const t = (k / 18) * 2 - 1;
+            pushBoxPt(t * hw, -hh - 0.6, 0, ribCol, 5.2, 0.94);
+            pushBoxPt(0, -hh - 0.6, t * hd, ribCol, 5.2, 0.94);
           }
-          pushBoxPt(0, -hh - 2.4, 0, '#ffffff', 12.0, 0.96, 1);
-          pushBoxPt(0, 0, 0, boxCol, 42, 0.28, 2);
+          for (let k = 0; k <= 13; k++) {
+            const ly = ((k / 13) * 2 - 1) * hh;
+            pushBoxPt(0, ly, hd + 0.5, ribCol, 4.8, 0.88);
+            pushBoxPt(0, ly, -hd - 0.5, ribCol, 4.8, 0.88);
+            pushBoxPt(hw + 0.5, ly, 0, ribCol, 4.8, 0.88);
+            pushBoxPt(-hw - 0.5, ly, 0, ribCol, 4.8, 0.88);
+          }
+          // 3D double-loop bow on top
+          for (let k = 0; k < 30; k++) {
+            const t = (k / 30) * Math.PI * 2;
+            const bx = Math.sin(t) * 10.5;
+            const by = -hh - 2.6 - Math.abs(Math.sin(t)) * 5.6;
+            const bz = Math.sin(2 * t) * 4.5;
+            pushBoxPt(bx, by, bz, ribCol, 5.0, 0.94);
+          }
+          // Warm inner core glow
+          pushBoxPt(0, 0, 0, boxCol, 34, 0.30, 2);
         });
 
         // 7. Wide Milky Way Spiral Galaxy Base (5,200 particles)
